@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Решение Транспортной задачи</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="./js.png">
+    <script src="./script.js" defer></script>
+    <script src="./draw.js" defer></script>
+</head>
+
+<body>
+    <div class="content-container">
+        <h1>Решение Транспортной задачи</h1>
+        
+        Введите количество поставщиков (m):
+        <input type="text" id="count_a" placeholder="Введите число">
+
+        <br><br>
+
+        Введите количество потребителей (n):
+        <input type="text" id="count_b" placeholder="Введите число">
+
+        <br><br>
+
+        <button id="btn_save_params">Сохранить</button>
+
+        <br><br><br>
+
+        <div id="a_values"></div>
+        <br>
+        <div id="b_values"></div>
+        <br>
+        <button id="btn_draw_c_system" style="display: none;">Задать тарифы</button>
+        <br><br>
+        
+        <div id="c_values"></div>
+        <br><br>        
+
+        <div class="method-choice" style="display: none;">
+            Выберите метод нахождения исходного опорного плана:
+            <br>
+            <label><input type="radio" name="method" value="northwest" checked> Метод Северо-западного угла</label>
+            <br>
+            <label><input type="radio" name="method" value="minimum"> Метод Минимального элемента</label>
+        </div>
+
+        <br><br>
+        <button id="btn_solve_northwest_corner" style="display: none;">Решить</button>
+        <button id="btn_clear_table" style="display: none;">Очистить</button>
+        <br><br>
+        <div id="sum_a"></div>
+        <div id="sum_b"></div>
+        <div id="condition"></div>
+        <h2 id="title_1" style="display: none;">Нахождение исходного опорного плана выбранным методом</h2>
+        <div id="method_description"></div>
+        <div id="solved_matrix"></div>
+        <div id="ans_1"></div>
+
+        <!-- <h2 id="title_2" style="display: none;">Решение</h2> -->
+        <div id="history_solution"></div>
+        <div id="ans_2"></div>
+
+    </div>
+
+</body>
+
+</html>

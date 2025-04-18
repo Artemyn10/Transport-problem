@@ -1,0 +1,100 @@
+body {
+    font-family: 'Times New Roman', Times, serif !important;  /* Шрифт */
+    font-size: 18px; /* Размер текста */
+    line-height: 1.0; /* Межстрочный интервал */
+    position: relative; /* Необходимо для позиционирования псевдоэлемента */
+    background-image: url('./фон.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 10px; /* отступы по умолчанию */
+    padding: 20px; /* Отступы для body */
+}
+
+/* Контейнер для содержимого */
+.content-container {
+    background-color: white; /* Белый фон */
+    border: 2px solid rgb(231, 15, 15); /* Рамка */
+    padding: 20px; /* Внутренние отступы */
+    max-width: 900px; /* Максимальная ширина контейнера */
+    margin: 0 auto; /* Центрирование контейнера */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Тень для красоты */
+    position: relative; /* Для позиционирования внутри body */
+    z-index: 1; /* Помещаем контейнер над псевдоэлементом */
+    min-height: 50px; /* Минимальная высота контейнера */
+    overflow: hidden; /* Чтобы псевдоэлемент не выходил за границы контейнера */
+}
+
+/* Псевдоэлемент для фонового изображения с прозрачностью */
+.content-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('./фон.jpg'); /* Фоновое изображение */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.1; /* Прозрачность 10% (90% видимости) */
+    z-index: -1; /* Помещаем слой под содержимое контейнера */
+}
+/* Стили для заголовка h1 */
+h1 {
+    text-align: center; /* Выравнивание текста по центру */
+    margin-top: 0; /* Убираем отступ сверху */
+}
+table {
+    border-collapse: collapse; /* Убираем двойные линии между ячейками */
+    text-align: center;
+    vertical-align: middle;
+    
+}
+TD, TH {
+    width: 80px; 
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid rgb(0, 0, 0); /* Параметры рамки */
+    text-align: center;
+    vertical-align: middle;
+}
+#btn_save_params, #btn_draw_c_system, #btn_solve_northwest_corner{
+    background-color: #4CAF50; /* Зелёный цвет фона */
+    color: rgb(253, 253, 253); /* Цвет текста */
+    font-size: 16px; /* Размер шрифта */
+    padding: 10px 20px; /* Отступы внутри кнопки */
+    border-radius: 5px; /* Скругление углов */
+    cursor: pointer; /* Указатель мыши при наведении */
+    transition: background-color 0.3s; /* Анимация при изменении фона */
+}
+
+/* Эффект при наведении мыши */
+#btn_save_params:hover, #btn_draw_c_system:hover, #btn_solve_northwest_corner:hover{
+    background-color: #87af89; /* Темно-зелёный цвет при наведении */
+    transform: scale(0.95); /* Уменьшение размера кнопки */
+}
+
+/* Эффект при нажатии */
+#btn_save_params:active, #btn_draw_c_system:active, #btn_solve_northwest_corner:active {
+    background-color: #3e8e41; /* Ещё более тёмный зелёный */
+    transform: scale(0.95); /* Уменьшение размера кнопки */
+}
+
+#btn_clear_table{
+    background-color: #e02f29; 
+    color: rgb(253, 253, 253); /* Цвет текста */
+    font-size: 16px; /* Размер шрифта */
+    padding: 10px 20px; /* Отступы внутри кнопки */
+    border-radius: 5px; /* Скругление углов */
+    cursor: pointer; /* Указатель мыши при наведении */
+    transition: background-color 0.3s; /* Анимация при изменении фона */
+}
+#btn_clear_table:hover{
+    background-color: #d6635b;
+    transform: scale(0.95); /* Уменьшение размера кнопки */
+}
+#btn_clear_table:active {
+    background-color: #81261b;
+    transform: scale(0.95); /* Уменьшение размера кнопки */
+}
