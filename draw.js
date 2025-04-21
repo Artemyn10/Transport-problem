@@ -71,12 +71,14 @@ function addEventHandler() {
         let solution;
         if (method === 'northwest') {
             solution = solve(res.a, res.b, c); // Используем метод северо-западного угла
-        } else {
+        } else if (method === 'minimum') {
             solution = solveMinimumElement(res.a, res.b, c); // Используем метод минимального элемента
+        } else if (method === 'Fogel') {
+            solution = solveVogelApproximation(res.a, res.b, c); // Используем метод Аппроксимации Фогеля
+        } else if (method === 'doublePref') {
+            solution = solveDoublePreference(res.a, res.b, c); // Используем метод двойного предпочтения
         }
-
         
-
         document.getElementById('title_1').style.display = 'block';
         //document.getElementById('title_2').style.display = 'block';
     });
@@ -142,7 +144,8 @@ function draw_C_System(a, b) {
         for (let j = 0; j < n; j++)  {
             let td = document.createElement('td');
             let input = document.createElement('input');
-            input.style.width = '30px';
+            input.type = "number";
+            input.style.width = '40px';
             input.id = `c${i}${j}`;
             td.appendChild(input);
             tr.appendChild(td);
@@ -273,6 +276,12 @@ function draw_C_System(a, b) {
         `;
         optimalityMessage.style.color = 'red'; // Красный цвет
         optimalityMessage.style.fontSize = '24px'; // Большой шрифт
+        // Добавляем граф только для оптимального плана
+        let div = document.createElement('div');
+        div.style.marginBottom = '20px';
+        let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration);
+        div.appendChild(graphElement);
+        
     }
     document.getElementById('solved_matrix').appendChild(optimalityMessage);
 
@@ -297,7 +306,7 @@ function formatPotentials(u, v) {
 }
 
 /**
- * Отрисока промежуточной таблицы для метода потенциалов
+ * Отрисовка промежуточной таблицы для метода потенциалов
  * @param {number[]} a значения для поставщиков
  * @param {number[]} b значения для потребителей
  * @param {number[][]} c цены
@@ -309,8 +318,9 @@ function formatPotentials(u, v) {
  * @param {Cell} bazaCell новая базисная ячейка
  * @param {number} delta минимальное значение для вычитания/сложения
  * @param {boolean} flag костыль :)
+ * @param {number} iteration номер итерации
  */
-function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
+ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
     let m = a.length;
     let n = b.length;
     
@@ -441,7 +451,6 @@ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, ba
     Вычислим оценки свободных клеток по формуле: Δ<sub>ij</sub> = U<sub>i</sub> + V<sub>j</sub> - c<sub>ij</sub> <br>
     ${formatDeltas(deltas)}`;
     
-
     let hasPositiveDelta = deltas.some(d => d.delta > 0);
     let optimalityMessage = document.createElement('div');
     optimalityMessage.style.marginBottom = '20px';
@@ -471,9 +480,160 @@ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, ba
         div.appendChild(zMessage);
         div.appendChild(deltaMessage);
         div.appendChild(optimalityMessage);
+
+        // Добавляем граф только для оптимального плана
+        if (!hasPositiveDelta) {
+            let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration);
+            div.appendChild(graphElement);
+        }
     }
 
     document.getElementById('history_solution').appendChild(div);
+}
+
+/**
+ * Отрисовка транспортного плана в виде двудольного графа
+ * @param {number[][]} x матрица с перевозками
+ * @param {number[][]} c цены
+ * @param {Cell[]} indexesForBaza индексы для базисных переменных
+ * @param {number} m число поставщиков
+ * @param {number} n число потребителей
+ * @param {number[]} a запасы поставщиков
+ * @param {number[]} b потребности потребителей
+ * @param {number} iteration номер итерации
+ * @returns {HTMLElement} div с графом
+ */
+function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
+    let graphDiv = document.createElement('div');
+    
+    // Заголовок графа
+    let graphHeader = document.createElement('div');
+    graphHeader.style.fontWeight = 'bold';
+    graphHeader.style.marginTop = '20px';
+    graphHeader.style.marginBottom = '10px';
+    graphHeader.innerHTML = `Оптимальный опорный план X<sub>${iteration}</sub> в виде графа:`;
+    graphDiv.appendChild(graphHeader);
+
+    // Вычисляем суммарные транспортные издержки
+    let totalCost = 0;
+    for (let cell of indexesForBaza) {
+        let i = cell.row;
+        let j = cell.col;
+        totalCost += x[i][j] * c[i][j];
+    }
+
+    // Добавляем надпись с издержками
+    let costMessage = document.createElement('div');
+    costMessage.style.marginBottom = '10px';
+    costMessage.style.fontStyle = 'italic';
+    costMessage.innerHTML = `Для того чтобы транспортные издержки были минимальны и составляли ${totalCost}, следует вот так распределить продукцию:`;
+    graphDiv.appendChild(costMessage);
+
+    // Контейнер для графа
+    let graphContainer = document.createElement('div');
+    graphContainer.id = `graph-container-${iteration}`;
+    graphContainer.style.width = '100%';
+    graphContainer.style.height = '400px';
+    graphContainer.style.border = '1px solid black';
+    graphDiv.appendChild(graphContainer);
+
+    // Формируем узлы и рёбра
+    let nodes = [];
+    let edges = [];
+
+    // Узлы для поставщиков (Ai) — вверху
+    for (let i = 0; i < m; i++) {
+        let xPos = i * 200 - (m - 1) * 100;
+        nodes.push({
+            id: `A${i}`,
+            label: `A${i+1}`,
+            group: 'supplier',
+            x: xPos,
+            y: -100
+        });
+        nodes.push({
+            id: `A${i}-label`,
+            label: `Запас: ${a[i]} МВт`,
+            shape: 'text',
+            x: xPos,
+            y: -150
+        });
+    }
+
+    // Узлы для потребителей (Bj) — внизу
+    for (let j = 0; j < n; j++) {
+        let xPos = j * 200 - (n - 1) * 100;
+        nodes.push({
+            id: `B${j}`,
+            label: `B${j+1}`,
+            group: 'consumer',
+            x: xPos,
+            y: 100
+        });
+        nodes.push({
+            id: `B${j}-label`,
+            label: `Потребность: ${b[j]} МВт`,
+            shape: 'text',
+            x: xPos,
+            y: 150
+        });
+    }
+
+    // Рёбра только для базисных клеток с ненулевыми перевозками
+    for (let i = 0; i < m; i++) {
+        for (let j = 0; j < n; j++) {
+            let isBasic = indexesForBaza.some(cell => cell.row === i && cell.col === j);
+            if (isBasic && x[i][j] > 0) { // Только для базисных клеток с x[i][j] > 0
+                edges.push({
+                    from: `A${i}`,
+                    to: `B${j}`,
+                    label: `${x[i][j]} (c=${c[i][j]})`,
+                    color: { color: 'green' },
+                    width: 2,
+                    title: `Перевозка: ${x[i][j]}, Стоимость: ${c[i][j]}`
+                });
+            }
+        }
+    }
+
+    // Инициализация графа с Vis.js
+    let data = {
+        nodes: new vis.DataSet(nodes),
+        edges: new vis.DataSet(edges)
+    };
+
+    let options = {
+        nodes: {
+            shape: 'circle',
+            size: 30,
+            font: { 
+                size: 12, 
+                align: 'center'
+            },
+            color: {
+                background: (node) => node.group === 'supplier' ? '#800080' : node.group === 'consumer' ? '#ADD8E6' : 'transparent',
+                border: (node) => node.group ? '#000000' : 'transparent'
+            }
+        },
+        edges: {
+            font: { size: 12, align: 'middle' },
+            smooth: { type: 'straight' }
+        },
+        physics: false,
+        layout: {
+            improvedLayout: true
+        }
+    };
+
+    // Создаем граф после добавления контейнера в DOM
+    setTimeout(() => {
+        let container = document.getElementById(`graph-container-${iteration}`);
+        if (container) {
+            new vis.Network(container, data, options);
+        }
+    }, 0);
+
+    return graphDiv;
 }
 /**
  * Отрисовка HTML для заполнения системы (a, b)

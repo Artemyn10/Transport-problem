@@ -8,6 +8,8 @@
     <title>Решение Транспортной задачи</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="./js.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis-network.min.css" rel="stylesheet" type="text/css" />
     <script src="./script.js" defer></script>
     <script src="./draw.js" defer></script>
 </head>
@@ -17,12 +19,12 @@
         <h1>Решение Транспортной задачи</h1>
         
         Введите количество поставщиков (m):
-        <input type="text" id="count_a" placeholder="Введите число">
+        <input type="number" id="count_a" placeholder="Введите число">
 
         <br><br>
 
         Введите количество потребителей (n):
-        <input type="text" id="count_b" placeholder="Введите число">
+        <input type="number" id="count_b" placeholder="Введите число">
 
         <br><br>
 
@@ -46,6 +48,10 @@
             <label><input type="radio" name="method" value="northwest" checked> Метод Северо-западного угла</label>
             <br>
             <label><input type="radio" name="method" value="minimum"> Метод Минимального элемента</label>
+            <br>
+            <label><input type="radio" name="method" value="Fogel"> Метод Аппроксимации Фогеля</label>
+            <br>
+            <label><input type="radio" name="method" value="doublePref"> Метод Двойного предпочтения</label>
         </div>
 
         <br><br>

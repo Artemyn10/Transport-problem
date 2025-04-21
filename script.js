@@ -335,6 +335,393 @@ function solveMinimumElement(a, b, costs) {
     potentialMethod(a, b, x, costs, indexesForBaza);
 }
 
+/**
+ * Метод аппроксимации Фогеля
+ * @param {number[]} a Значения для поставщиков
+ * @param {number[]} b Значения для потребителей
+ * @param {number[][]} costs Значения тарифов
+ */
+ function solveVogelApproximation(a, b, costs) {
+    // Описание сути метода аппроксимации Фогеля
+    let methodDescription = `
+        <div style="margin-bottom: 20px;">
+            <h3>Суть метода аппроксимации Фогеля</h3>
+            <p>Метод аппроксимации Фогеля (VAM) — это эвристический метод для нахождения исходного опорного плана транспортной задачи, который часто даёт более оптимальное начальное решение по сравнению с другими методами, такими как метод минимального элемента. Его суть заключается в следующем:</p>
+            <ul>
+                <li>Для каждой строки и столбца вычисляется штраф как разница между двумя наименьшими тарифами (стоимостями перевозки).</li>
+                <li>Выбирается строка или столбец с наибольшим штрафом, так как это указывает на наибольшую потенциальную экономию при использовании минимального тарифа.</li>
+                <li>В выбранной строке или столбце распределяется максимально возможное количество груза в клетку с минимальным тарифом.</li>
+                <li>После распределения обновляются запасы поставщиков и потребности потребителей, а полностью удовлетворённая строка или столбец исключаются из рассмотрения.</li>
+                <li>Процесс повторяется, пока все грузы не будут распределены.</li>
+                <li>Если количество базисных клеток меньше <code>m + n - 1</code>, добавляются базисные нули в клетки с минимальным тарифом, чтобы обеспечить выполнение условия для метода потенциалов.</li>
+            </ul>
+            <p>Метод аппроксимации Фогеля сложнее в реализации, но обычно обеспечивает лучшее начальное решение, минимизируя общую стоимость перевозок.</p>
+        </div>
+    `;
+    document.getElementById('method_description').innerHTML = methodDescription;
+
+    // Вычисление суммы запасов и потребностей
+    let aSum = a.reduce((prev, cur) => prev + cur, 0);
+    let bSum = b.reduce((prev, cur) => prev + cur, 0);
+
+    // Вывод суммы по поставщикам и потребителям
+    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
+    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
+
+    // Проверка условия разрешимости
+    if (aSum > bSum) {
+        b.push(aSum - bSum);
+        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
+        for (let i = 0; i < a.length; i++) {
+            costs[i].push(0);
+        }
+    } else if (aSum < bSum) {
+        a.push(bSum - aSum);
+        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
+        let newRow = [];
+        for (let i = 0; i < b.length; i++) {
+            newRow.push(0);
+        }
+        costs.push(newRow);
+    } else {
+        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
+        <br>Тип задачи: закрытая транспортная задача.`;
+    }
+
+    let m = a.length;
+    let n = b.length;
+
+    // Инициализация плана перевозок
+    let x = [];
+    for (let i = 0; i < m; i++) {
+        let row = [];
+        for (let j = 0; j < n; j++) {
+            row.push(0);
+        }
+        x.push(row);
+    }
+
+    let aCopy = [...a];
+    let bCopy = [...b];
+    let indexesForBaza = [];
+    let rowAvailable = Array(m).fill(true);
+    let colAvailable = Array(n).fill(true);
+
+    // Шаг 1: Распределяем грузы методом аппроксимации Фогеля
+    while (rowAvailable.some(val => val) && colAvailable.some(val => val)) {
+        // Вычисляем штрафы для строк
+        let rowPenalties = [];
+        for (let i = 0; i < m; i++) {
+            if (!rowAvailable[i]) {
+                rowPenalties.push({ penalty: -1, index: i });
+                continue;
+            }
+            let rowCosts = [];
+            for (let j = 0; j < n; j++) {
+                if (colAvailable[j]) {
+                    rowCosts.push(costs[i][j]);
+                }
+            }
+            rowCosts.sort((x, y) => x - y);
+            let penalty = rowCosts.length > 1 ? rowCosts[1] - rowCosts[0] : (rowCosts.length > 0 ? rowCosts[0] : 0);
+            rowPenalties.push({ penalty, index: i });
+        }
+
+        // Вычисляем штрафы для столбцов
+        let colPenalties = [];
+        for (let j = 0; j < n; j++) {
+            if (!colAvailable[j]) {
+                colPenalties.push({ penalty: -1, index: j });
+                continue;
+            }
+            let colCosts = [];
+            for (let i = 0; i < m; i++) {
+                if (rowAvailable[i]) {
+                    colCosts.push(costs[i][j]);
+                }
+            }
+            colCosts.sort((x, y) => x - y);
+            let penalty = colCosts.length > 1 ? colCosts[1] - colCosts[0] : (colCosts.length > 0 ? colCosts[0] : 0);
+            colPenalties.push({ penalty, index: j });
+        }
+
+        // Находим максимальный штраф
+        let maxRowPenalty = Math.max(...rowPenalties.map(p => p.penalty));
+        let maxColPenalty = Math.max(...colPenalties.map(p => p.penalty));
+        let isRow = maxRowPenalty >= maxColPenalty;
+
+        let selectedIndex, minCost, minI, minJ;
+
+        if (isRow) {
+            selectedIndex = rowPenalties.find(p => p.penalty === maxRowPenalty).index;
+            minCost = Infinity;
+            minJ = -1;
+            for (let j = 0; j < n; j++) {
+                if (colAvailable[j] && costs[selectedIndex][j] < minCost) {
+                    minCost = costs[selectedIndex][j];
+                    minJ = j;
+                }
+            }
+            minI = selectedIndex;
+        } else {
+            selectedIndex = colPenalties.find(p => p.penalty === maxColPenalty).index;
+            minCost = Infinity;
+            minI = -1;
+            for (let i = 0; i < m; i++) {
+                if (rowAvailable[i] && costs[i][selectedIndex] < minCost) {
+                    minCost = costs[i][selectedIndex];
+                    minI = i;
+                }
+            }
+            minJ = selectedIndex;
+        }
+
+        if (minI === -1 || minJ === -1) break;
+
+        // Распределяем груз
+        let allocation = Math.min(aCopy[minI], bCopy[minJ]);
+        x[minI][minJ] = allocation;
+        indexesForBaza.push(new Cell(minI, minJ));
+        aCopy[minI] -= allocation;
+        bCopy[minJ] -= allocation;
+
+        // Обновляем доступность строки и столбца
+        if (aCopy[minI] === 0) rowAvailable[minI] = false;
+        if (bCopy[minJ] === 0) colAvailable[minJ] = false;
+    }
+
+    // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
+    let expectedBazisCount = m + n - 1;
+    if (indexesForBaza.length < expectedBazisCount) {
+        console.log(`Текущее количество базисных клеток: ${indexesForBaza.length}, ожидается: ${expectedBazisCount}. Добавляем базисные нули.`);
+
+        // Добавляем клетки с x[i][j] = 0, пока не достигнем m + n - 1
+        while (indexesForBaza.length < expectedBazisCount) {
+            let added = false;
+            for (let i = 0; i < m; i++) {
+                for (let j = 0; j < n; j++) {
+                    // Проверяем, что клетка еще не базисная
+                    if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
+                        // Простой способ: добавляем клетку, если строка или столбец еще не полностью заняты
+                        let rowCount = indexesForBaza.filter(cell => cell.row === i).length;
+                        let colCount = indexesForBaza.filter(cell => cell.col === j).length;
+                        if (rowCount === 0 || colCount === 0) {
+                            indexesForBaza.push(new Cell(i, j));
+                            x[i][j] = 0; // Устанавливаем базисный ноль
+                            added = true;
+                            break;
+                        }
+                    }
+                }
+                if (added) break;
+            }
+
+            // Если не удалось добавить клетку, выбираем любую свободную клетку
+            if (!added) {
+                for (let i = 0; i < m; i++) {
+                    for (let j = 0; j < n; j++) {
+                        if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
+                            indexesForBaza.push(new Cell(i, j));
+                            x[i][j] = 0; // Базисный ноль
+                            added = true;
+                            break;
+                        }
+                    }
+                    if (added) break;
+                }
+            }
+        }
+    }
+
+    console.log(`Метод аппроксимации Фогеля завершен. Базисные клетки:`, indexesForBaza);
+    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    potentialMethod(a, b, x, costs, indexesForBaza);
+}
+
+/**
+ * Метод двойного предпочтения
+ * @param {number[]} a Значения для поставщиков
+ * @param {number[]} b Значения для потребителей
+ * @param {number[][]} costs Значения тарифов
+ */
+ function solveDoublePreference(a, b, costs) {
+    // Описание сути метода двойного предпочтения
+    let methodDescription = `
+        <div style="margin-bottom: 20px;">
+            <h3>Суть метода двойного предпочтения</h3>
+            <p>Метод двойного предпочтения — это эвристический метод для нахождения исходного опорного плана транспортной задачи, который учитывает как стоимость перевозок, так и ограничения по запасам и потребностям. Его суть заключается в следующем:</p>
+            <ul>
+                <li>На каждом шаге определяется строка с минимальным доступным запасом и столбец с минимальной доступной потребностью.</li>
+                <li>Среди клеток, находящихся на пересечении этой строки или этого столбца, выбирается клетка с минимальным тарифом (стоимостью перевозки).</li>
+                <li>В выбранную клетку распределяется максимально возможное количество груза, равное минимуму из оставшихся запасов поставщика и потребностей потребителя.</li>
+                <li>После распределения обновляются запасы и потребности, а полностью удовлетворённая строка или столбец исключаются из рассмотрения.</li>
+                <li>Процесс повторяется, пока все грузы не будут распределены.</li>
+                <li>Если количество базисных клеток меньше <code>m + n - 1</code>, добавляются базисные нули в клетки с минимальным тарифом, чтобы обеспечить выполнение условия для метода потенциалов.</li>
+            </ul>
+            <p>Метод двойного предпочтения стремится сбалансировать выбор клеток с низкими тарифами и приоритетное удовлетворение наименьших запасов или потребностей, что может привести к более эффективному начальному плану.</p>
+        </div>
+    `;
+    document.getElementById('method_description').innerHTML = methodDescription;
+
+    // Вычисление суммы запасов и потребностей
+    let aSum = a.reduce((prev, cur) => prev + cur, 0);
+    let bSum = b.reduce((prev, cur) => prev + cur, 0);
+
+    // Вывод суммы по поставщикам и потребителям
+    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
+    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
+
+    // Проверка условия разрешимости
+    if (aSum > bSum) {
+        b.push(aSum - bSum);
+        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
+        for (let i = 0; i < a.length; i++) {
+            costs[i].push(0);
+        }
+    } else if (aSum < bSum) {
+        a.push(bSum - aSum);
+        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
+        let newRow = [];
+        for (let i = 0; i < b.length; i++) {
+            newRow.push(0);
+        }
+        costs.push(newRow);
+    } else {
+        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
+        <br>Тип задачи: закрытая транспортная задача.`;
+    }
+
+    let m = a.length;
+    let n = b.length;
+
+    // Инициализация плана перевозок
+    let x = [];
+    for (let i = 0; i < m; i++) {
+        let row = [];
+        for (let j = 0; j < n; j++) {
+            row.push(0);
+        }
+        x.push(row);
+    }
+
+    let aCopy = [...a];
+    let bCopy = [...b];
+    let indexesForBaza = [];
+    let rowAvailable = Array(m).fill(true);
+    let colAvailable = Array(n).fill(true);
+
+    // Шаг 1: Распределяем грузы методом двойного предпочтения
+    while (rowAvailable.some(val => val) && colAvailable.some(val => val)) {
+        // Находим строку с минимальным запасом
+        let minSupply = Infinity;
+        let minSupplyIndex = -1;
+        for (let i = 0; i < m; i++) {
+            if (rowAvailable[i] && aCopy[i] > 0 && aCopy[i] < minSupply) {
+                minSupply = aCopy[i];
+                minSupplyIndex = i;
+            }
+        }
+
+        // Находим столбец с минимальной потребностью
+        let minDemand = Infinity;
+        let minDemandIndex = -1;
+        for (let j = 0; j < n; j++) {
+            if (colAvailable[j] && bCopy[j] > 0 && bCopy[j] < minDemand) {
+                minDemand = bCopy[j];
+                minDemandIndex = j;
+            }
+        }
+
+        if (minSupplyIndex === -1 || minDemandIndex === -1) break;
+
+        // Выбираем клетку с минимальным тарифом в строке minSupplyIndex или столбце minDemandIndex
+        let minCost = Infinity;
+        let minI = -1;
+        let minJ = -1;
+
+        // Проверяем клетки в строке с минимальным запасом
+        for (let j = 0; j < n; j++) {
+            if (colAvailable[j] && bCopy[j] > 0 && costs[minSupplyIndex][j] < minCost) {
+                minCost = costs[minSupplyIndex][j];
+                minI = minSupplyIndex;
+                minJ = j;
+            }
+        }
+
+        // Проверяем клетки в столбце с минимальной потребностью
+        for (let i = 0; i < m; i++) {
+            if (rowAvailable[i] && aCopy[i] > 0 && costs[i][minDemandIndex] < minCost) {
+                minCost = costs[i][minDemandIndex];
+                minI = i;
+                minJ = minDemandIndex;
+            }
+        }
+
+        if (minI === -1 || minJ === -1) break;
+
+        // Распределяем груз
+        let allocation = Math.min(aCopy[minI], bCopy[minJ]);
+        x[minI][minJ] = allocation;
+        indexesForBaza.push(new Cell(minI, minJ));
+        aCopy[minI] -= allocation;
+        bCopy[minJ] -= allocation;
+
+        // Обновляем доступность строки и столбца
+        if (aCopy[minI] === 0) rowAvailable[minI] = false;
+        if (bCopy[minJ] === 0) colAvailable[minJ] = false;
+    }
+
+    // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
+    let expectedBazisCount = m + n - 1;
+    if (indexesForBaza.length < expectedBazisCount) {
+        console.log(`Текущее количество базисных клеток: ${indexesForBaza.length}, ожидается: ${expectedBazisCount}. Добавляем базисные нули.`);
+
+        // Добавляем клетки с x[i][j] = 0, пока не достигнем m + n - 1
+        while (indexesForBaza.length < expectedBazisCount) {
+            let added = false;
+            for (let i = 0; i < m; i++) {
+                for (let j = 0; j < n; j++) {
+                    // Проверяем, что клетка еще не базисная
+                    if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
+                        // Простой способ: добавляем клетку, если строка или столбец еще не полностью заняты
+                        let rowCount = indexesForBaza.filter(cell => cell.row === i).length;
+                        let colCount = indexesForBaza.filter(cell => cell.col === j).length;
+                        if (rowCount === 0 || colCount === 0) {
+                            indexesForBaza.push(new Cell(i, j));
+                            x[i][j] = 0; // Устанавливаем базисный ноль
+                            added = true;
+                            break;
+                        }
+                    }
+                }
+                if (added) break;
+            }
+
+            // Если не удалось добавить клетку, выбираем любую свободную клетку
+            if (!added) {
+                for (let i = 0; i < m; i++) {
+                    for (let j = 0; j < n; j++) {
+                        if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
+                            indexesForBaza.push(new Cell(i, j));
+                            x[i][j] = 0; // Базисный ноль
+                            added = true;
+                            break;
+                        }
+                    }
+                    if (added) break;
+                }
+            }
+        }
+    }
+
+    console.log(`Метод двойного предпочтения завершен. Базисные клетки:`, indexesForBaza);
+    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    potentialMethod(a, b, x, costs, indexesForBaza);
+}
 
 /**
  * Вычисляет потенциалы u и v
