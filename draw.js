@@ -40,7 +40,6 @@ function addEventHandler() {
         }
         draw_C_System(res.a, res.b);
         
-        // Показываем элементы с проверкой их существования
         const methodChoice = document.getElementById('method-choice') || document.querySelector('.method-choice');
         const solveBtn = document.getElementById('btn_solve_northwest_corner');
         const clearBtn = document.getElementById('btn_clear_table');
@@ -63,24 +62,21 @@ function addEventHandler() {
             c.push(row);
         }
 
-        // Получаем выбранный метод
         const method = document.querySelector('input[name="method"]:checked')?.value || 'northwest';
         console.log(`Выбран метод: ${method}`);
 
-        // Решаем задачу в зависимости от выбранного метода
         let solution;
         if (method === 'northwest') {
-            solution = solve(res.a, res.b, c); // Используем метод северо-западного угла
+            solution = solve(res.a, res.b, c);
         } else if (method === 'minimum') {
-            solution = solveMinimumElement(res.a, res.b, c); // Используем метод минимального элемента
+            solution = solveMinimumElement(res.a, res.b, c);
         } else if (method === 'Fogel') {
-            solution = solveVogelApproximation(res.a, res.b, c); // Используем метод Аппроксимации Фогеля
+            solution = solveVogelApproximation(res.a, res.b, c);
         } else if (method === 'doublePref') {
-            solution = solveDoublePreference(res.a, res.b, c); // Используем метод двойного предпочтения
+            solution = solveDoublePreference(res.a, res.b, c);
         }
         
         document.getElementById('title_1').style.display = 'block';
-        //document.getElementById('title_2').style.display = 'block';
     });
 
     document.getElementById('btn_clear_table').addEventListener('click', () => {
@@ -88,7 +84,6 @@ function addEventHandler() {
         document.getElementById('history_solution').replaceChildren();
 
         document.getElementById('title_1').style.display = 'none';
-        //document.getElementById('title_2').style.display = 'none';
 
         document.getElementById('ans_1').innerHTML = '';
         document.getElementById('ans_2').innerHTML = '';
@@ -99,7 +94,7 @@ function addEventHandler() {
     });
 }
 
-addEventHandler()
+addEventHandler();
 
 //=====================================================================================================================
                                         // ОТРИСОВКА ВСЯКОГО
@@ -117,10 +112,9 @@ function draw_C_System(a, b) {
     let table = document.createElement('table');
     let tBody = document.createElement('tbody');
 
-    // Создаем строку "Введите тарифы"
     let instructionText = document.createElement('p');
     instructionText.textContent = 'Введите тарифы: ';
-    instructionText.style.marginBottom = '10px'; // Отступ снизу
+    instructionText.style.marginBottom = '10px';
 
     let trHead = document.createElement('tr');
     let td1 = document.createElement('td');
@@ -135,6 +129,15 @@ function draw_C_System(a, b) {
     }
     tBody.appendChild(trHead);
     
+    // Функция для преобразования числа в нижние индексы
+    const toSubscript = (num) => {
+        const subscripts = {
+            '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+            '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉'
+        };
+        return String(num).split('').map(digit => subscripts[digit]).join('');
+    };
+
     for (let i = 0; i < m; i++) {
         let tr = document.createElement('tr');
         let tdZero = document.createElement('td');
@@ -144,6 +147,10 @@ function draw_C_System(a, b) {
         for (let j = 0; j < n; j++)  {
             let td = document.createElement('td');
             let input = document.createElement('input');
+            // Формируем placeholder с нижними индексами
+            //const subI = toSubscript(i + 1);
+            //const subJ = toSubscript(j + 1);
+            input.placeholder = `c${i+1},${j+1}`; 
             input.type = "number";
             input.style.width = '40px';
             input.id = `c${i}${j}`;
@@ -155,38 +162,33 @@ function draw_C_System(a, b) {
     
     table.appendChild(tBody);
 
-    // Очищаем контейнер и добавляем текст и таблицу
     let cValuesContainer = document.getElementById('c_values');
-    cValuesContainer.replaceChildren(); // Очищаем контейнер
-    cValuesContainer.appendChild(instructionText); // Добавляем текст
-    cValuesContainer.appendChild(table); // Добавляем таблицу
+    cValuesContainer.replaceChildren();
+    cValuesContainer.appendChild(instructionText);
+    cValuesContainer.appendChild(table);
 }
 
 /**
  * Отрисовка HTML таблицы решения для "северо-западного угла"
  * @param {number[]} a значения для поставщиков
  * @param {number[]} b значения для потребителей
- * @param {number[]} c цены
+ * @param {number[][]} c цены
  * @param {number[][]} x матрица с перевозками
  * @param {Cell[]} indexesForBaza индексы для базисных переменных
  */
- function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
+function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
     let m = a.length;
     let n = b.length;
 
-    // Добавляем заголовок с номером плана
     let planHeader = document.createElement('div');
     planHeader.style.fontWeight = 'bold';
     planHeader.style.marginBottom = '10px';
     planHeader.innerHTML = `План X<sub>0</sub>:`;
-    document.getElementById('solved_matrix').appendChild(planHeader);
-
-    // Создаем таблицу
+    
     let table = document.createElement('table');
     table.style.marginBottom = '20px';
     let tBody = document.createElement('tbody');
 
-    // Заголовок таблицы
     let trHead = document.createElement('tr');
     let td1 = document.createElement('td');
     td1.appendChild(document.createTextNode(`a\\b`));
@@ -200,7 +202,6 @@ function draw_C_System(a, b) {
     }
     tBody.appendChild(trHead);
 
-    // Заполнение таблицы данными
     for (let i = 0; i < m; i++) {
         let tr = document.createElement('tr');
         let tdZero = document.createElement('td');
@@ -216,7 +217,6 @@ function draw_C_System(a, b) {
                 </div>
                 <div style="text-align: center;">${x[i][j]}</div>`;
 
-            // Подсветка базисных клеток
             for (let cell of indexesForBaza) {
                 if (i == cell.row && j == cell.col) {
                     td.style.background = 'Lightgreen';
@@ -229,27 +229,18 @@ function draw_C_System(a, b) {
     }
 
     table.appendChild(tBody);
-    // Очищаем контейнер и добавляем заголовок плана и таблицу
-    let solvedMatrix = document.getElementById('solved_matrix');
-    solvedMatrix.replaceChildren(); // Очищаем контейнер
-    solvedMatrix.appendChild(planHeader); // Добавляем заголовок плана
-    solvedMatrix.appendChild(table); // Добавляем таблицу
 
-    // Вычисляем суммарные транспортные расходы
     let totalCost = 0;
     for (let cell of indexesForBaza) {
         let [i, j] = [cell.row, cell.col];
         totalCost += x[i][j] * c[i][j];
     }
 
-    // Добавляем сообщение о суммарных транспортных расходах
     let costMessage = document.createElement('div');
     costMessage.style.marginBottom = '20px';
     costMessage.style.fontWeight = 'bold';
     costMessage.innerHTML = `Суммарные транспортные расходы в исходном опорном плане: Z<sub>0</sub> = ${totalCost}`;
-    document.getElementById('solved_matrix').appendChild(costMessage);
 
-    // Вычисляем и выводим оценки свободных клеток (дельты)
     let deltas = calculateDeltas(a, b, c, x, indexesForBaza);
     let deltaMessage = document.createElement('div');
     deltaMessage.style.marginBottom = '20px';
@@ -259,12 +250,9 @@ function draw_C_System(a, b) {
     ${formatPotentials(calculatePotentials(a, b, c, indexesForBaza)[0], calculatePotentials(a, b, c, indexesForBaza)[1], a, b, c, indexesForBaza)}
     Вычислим оценки свободных клеток по формуле: Δ<sub>ij</sub> = U<sub>i</sub> + V<sub>j</sub> - c<sub>ij</sub> <br>
     ${formatDeltas(deltas)}`;
-    document.getElementById('solved_matrix').appendChild(deltaMessage);
 
-    // Проверяем, есть ли положительные дельты
     let hasPositiveDelta = deltas.some(d => d.delta > 0);
 
-    // Сообщение о неоптимальности плана
     let optimalityMessage = document.createElement('div');
     optimalityMessage.style.marginBottom = '20px';
     optimalityMessage.style.fontWeight = 'bold';
@@ -272,19 +260,24 @@ function draw_C_System(a, b) {
         optimalityMessage.innerHTML = `Исходный опорный план X<sub>0</sub> не оптимален, так как есть положительные оценки свободных клеток.<br>
         Выберем наибольшую положительную оценку, построим цикл пересчета и получим новый план.`;
     } else {
-        optimalityMessage.innerHTML = `Исходный опорный план X<sub>0</sub> оптимален, так как все оценки свободных клеток неположительные.
-        `;
-        optimalityMessage.style.color = 'red'; // Красный цвет
-        optimalityMessage.style.fontSize = '24px'; // Большой шрифт
-        // Добавляем граф только для оптимального плана
-        let div = document.createElement('div');
-        div.style.marginBottom = '20px';
-        let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration);
-        div.appendChild(graphElement);
-        
+        optimalityMessage.innerHTML = `Исходный опорный план X<sub>0</sub> оптимален, так как все оценки свободных клеток неположительные.`;
+        optimalityMessage.style.color = 'red';
+        optimalityMessage.style.fontSize = '24px';
     }
-    document.getElementById('solved_matrix').appendChild(optimalityMessage);
 
+    let solvedMatrix = document.getElementById('solved_matrix');
+    solvedMatrix.replaceChildren();
+    solvedMatrix.appendChild(planHeader);
+    solvedMatrix.appendChild(table);
+    solvedMatrix.appendChild(costMessage);
+    solvedMatrix.appendChild(deltaMessage);
+    solvedMatrix.appendChild(optimalityMessage);
+
+    // Добавляем граф, если план оптимален
+    if (!hasPositiveDelta) {
+        let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, 0);
+        solvedMatrix.appendChild(graphElement);
+    }
 }
 
 // Функция для форматирования потенциалов 
@@ -297,8 +290,7 @@ function formatPotentials(u, v) {
 /**
  * Форматирует дельты для вывода
  */
- function formatDeltas(deltas) {
-    // Форматируем дельты
+function formatDeltas(deltas) {
     return deltas.map(d => {
         let deltaText = `Δ<sub>${d.row + 1},${d.col + 1}</sub> = ${d.delta}`;
         return deltaText;
@@ -320,14 +312,13 @@ function formatPotentials(u, v) {
  * @param {boolean} flag костыль :)
  * @param {number} iteration номер итерации
  */
- function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
+function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
     let m = a.length;
     let n = b.length;
     
     let table = document.createElement('table');
     let tBody = document.createElement('tbody');
 
-    // Добавляем заголовок с номером плана
     let planHeader = document.createElement('div');
     planHeader.style.fontWeight = 'bold';
     planHeader.style.marginBottom = '10px';
@@ -481,7 +472,6 @@ function formatPotentials(u, v) {
         div.appendChild(deltaMessage);
         div.appendChild(optimalityMessage);
 
-        // Добавляем граф только для оптимального плана
         if (!hasPositiveDelta) {
             let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration);
             div.appendChild(graphElement);
@@ -506,7 +496,6 @@ function formatPotentials(u, v) {
 function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
     let graphDiv = document.createElement('div');
     
-    // Заголовок графа
     let graphHeader = document.createElement('div');
     graphHeader.style.fontWeight = 'bold';
     graphHeader.style.marginTop = '20px';
@@ -514,7 +503,6 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
     graphHeader.innerHTML = `Оптимальный опорный план X<sub>${iteration}</sub> в виде графа:`;
     graphDiv.appendChild(graphHeader);
 
-    // Вычисляем суммарные транспортные издержки
     let totalCost = 0;
     for (let cell of indexesForBaza) {
         let i = cell.row;
@@ -522,14 +510,12 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
         totalCost += x[i][j] * c[i][j];
     }
 
-    // Добавляем надпись с издержками
     let costMessage = document.createElement('div');
     costMessage.style.marginBottom = '10px';
     costMessage.style.fontStyle = 'italic';
-    costMessage.innerHTML = `Для того чтобы транспортные издержки были минимальны и составляли ${totalCost}, следует вот так распределить продукцию:`;
+    costMessage.innerHTML = `Для того чтобы транспортные издержки были минимальны и составляли ${totalCost} у.д.е., следует вот так распределить продукцию:`;
     graphDiv.appendChild(costMessage);
 
-    // Контейнер для графа
     let graphContainer = document.createElement('div');
     graphContainer.id = `graph-container-${iteration}`;
     graphContainer.style.width = '100%';
@@ -537,11 +523,9 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
     graphContainer.style.border = '1px solid black';
     graphDiv.appendChild(graphContainer);
 
-    // Формируем узлы и рёбра
     let nodes = [];
     let edges = [];
 
-    // Узлы для поставщиков (Ai) — вверху
     for (let i = 0; i < m; i++) {
         let xPos = i * 200 - (m - 1) * 100;
         nodes.push({
@@ -553,14 +537,13 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
         });
         nodes.push({
             id: `A${i}-label`,
-            label: `Запас: ${a[i]} МВт`,
+            label: `Запас: ${a[i]}`,
             shape: 'text',
             x: xPos,
             y: -150
         });
     }
 
-    // Узлы для потребителей (Bj) — внизу
     for (let j = 0; j < n; j++) {
         let xPos = j * 200 - (n - 1) * 100;
         nodes.push({
@@ -572,18 +555,17 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
         });
         nodes.push({
             id: `B${j}-label`,
-            label: `Потребность: ${b[j]} МВт`,
+            label: `Потребность: ${b[j]}`,
             shape: 'text',
             x: xPos,
             y: 150
         });
     }
 
-    // Рёбра только для базисных клеток с ненулевыми перевозками
     for (let i = 0; i < m; i++) {
         for (let j = 0; j < n; j++) {
             let isBasic = indexesForBaza.some(cell => cell.row === i && cell.col === j);
-            if (isBasic && x[i][j] > 0) { // Только для базисных клеток с x[i][j] > 0
+            if (isBasic && x[i][j] > 0) {
                 edges.push({
                     from: `A${i}`,
                     to: `B${j}`,
@@ -596,7 +578,6 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
         }
     }
 
-    // Инициализация графа с Vis.js
     let data = {
         nodes: new vis.DataSet(nodes),
         edges: new vis.DataSet(edges)
@@ -625,7 +606,6 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
         }
     };
 
-    // Создаем граф после добавления контейнера в DOM
     setTimeout(() => {
         let container = document.getElementById(`graph-container-${iteration}`);
         if (container) {
@@ -635,6 +615,7 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
 
     return graphDiv;
 }
+
 /**
  * Отрисовка HTML для заполнения системы (a, b)
  * @param {number} m кол-во поставщиков

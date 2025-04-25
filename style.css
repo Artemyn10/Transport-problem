@@ -3,7 +3,7 @@ body {
     font-size: 18px; /* Размер текста */
     line-height: 1.0; /* Межстрочный интервал */
     position: relative; /* Необходимо для позиционирования псевдоэлемента */
-    background-image: url('./фон.jpg');
+    background-image: url('./фон2.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -34,7 +34,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('./фон.jpg'); /* Фоновое изображение */
+    /*background-image: url('./фон.jpg'); /* Фоновое изображение */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
