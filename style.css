@@ -46,6 +46,12 @@ h1 {
     text-align: center; /* Выравнивание текста по центру */
     margin-top: 0; /* Убираем отступ сверху */
 }
+#count_a, #count_b {
+    width: 150px;
+    font-size: 15px;
+    padding: 5px;
+    box-sizing: border-box;
+}
 table {
     border-collapse: collapse; /* Убираем двойные линии между ячейками */
     text-align: center;

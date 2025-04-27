@@ -36,6 +36,49 @@
 
     return { a, b, costs };
 }
+
+/**
+ * Определяет тип транспортной задачи и добавляет фиктивных поставщиков/потребителей при необходимости
+ * @param {number[]} a Значения для поставщиков (модифицируется)
+ * @param {number[]} b Значения для потребителей (модифицируется)
+ * @param {number[][]} costs Значения тарифов (модифицируется)
+ * @param {HTMLElement} conditionElement Элемент для вывода условия разрешимости
+ * @returns {string} Тип задачи: "открытая" или "закрытая"
+ */
+ function determineTaskType(a, b, costs, conditionElement) {
+    // Вычисление суммы запасов и потребностей
+    let aSum = a.reduce((prev, cur) => prev + cur, 0);
+    let bSum = b.reduce((prev, cur) => prev + cur, 0);
+
+    // Вывод суммы по поставщикам и потребителям
+    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
+    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
+
+    // Проверка условия разрешимости
+    if (aSum > bSum) {
+        b.push(aSum - bSum);
+        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
+        for (let i = 0; i < a.length; i++) {
+            costs[i].push(0);
+        }
+        return "открытая";
+    } else if (aSum < bSum) {
+        a.push(bSum - aSum);
+        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
+        let newRow = [];
+        for (let i = 0; i < b.length; i++) {
+            newRow.push(0);
+        }
+        costs.push(newRow);
+        return "открытая";
+    } else {
+        conditionElement.innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
+        <br>Тип задачи: закрытая транспортная задача.`;
+        return "закрытая";
+    }
+}
 /**
  * северо-западный угол
  * @param {number[]} a значения для поставщиков
@@ -59,33 +102,9 @@ function solve(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
-    let aSum = a.reduce((prev, cur) => prev += cur, 0);
-    let bSum = b.reduce((prev, cur) => prev += cur, 0);
-
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
-
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-    } else if (aSum === bSum) {
-        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у поставщиков. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-    }
+    // Определяем тип задачи и модифицируем a, b, costs при необходимости
+    let conditionElement = document.getElementById('condition');
+    let taskType = determineTaskType(a, b, costs, conditionElement);
 
     let x = [];
     for (let i = 0; i < a.length; i++) {
@@ -215,34 +234,9 @@ function solveMinimumElement(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
-    let aSum = a.reduce((prev, cur) => prev + cur, 0);
-    let bSum = b.reduce((prev, cur) => prev + cur, 0);
-
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
-
-    // Проверка условия разрешимости
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-    } else if (aSum === bSum) {
-        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у поставщиков. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-    }
+    // Определяем тип задачи и модифицируем a, b, costs при необходимости
+    let conditionElement = document.getElementById('condition');
+    let taskType = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;
@@ -360,35 +354,9 @@ function solveMinimumElement(a, b, costs) {
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
 
-    // Вычисление суммы запасов и потребностей
-    let aSum = a.reduce((prev, cur) => prev + cur, 0);
-    let bSum = b.reduce((prev, cur) => prev + cur, 0);
-
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
-
-    // Проверка условия разрешимости
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-    } else {
-        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-    }
+    // Определяем тип задачи и модифицируем a, b, costs при необходимости
+    let conditionElement = document.getElementById('condition');
+    let taskType = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;
@@ -565,35 +533,9 @@ function solveMinimumElement(a, b, costs) {
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
 
-    // Вычисление суммы запасов и потребностей
-    let aSum = a.reduce((prev, cur) => prev + cur, 0);
-    let bSum = b.reduce((prev, cur) => prev + cur, 0);
-
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
-
-    // Проверка условия разрешимости
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-    } else {
-        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-    }
+    // Определяем тип задачи и модифицируем a, b, costs при необходимости
+    let conditionElement = document.getElementById('condition');
+    let taskType = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;

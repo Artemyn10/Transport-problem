@@ -169,7 +169,7 @@ function draw_C_System(a, b) {
 }
 
 /**
- * Отрисовка HTML таблицы решения для "северо-западного угла"
+ * Отрисовка HTML таблицы решения для исходного опорного плана
  * @param {number[]} a значения для поставщиков
  * @param {number[]} b значения для потребителей
  * @param {number[][]} c цены
@@ -241,15 +241,15 @@ function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
     costMessage.style.fontWeight = 'bold';
     costMessage.innerHTML = `Суммарные транспортные расходы в исходном опорном плане: Z<sub>0</sub> = ${totalCost}`;
 
+    // Вычисляем потенциалы u и v
+    let [u, v] = calculatePotentials(a, b, c, indexesForBaza);
     let deltas = calculateDeltas(a, b, c, x, indexesForBaza);
     let deltaMessage = document.createElement('div');
     deltaMessage.style.marginBottom = '20px';
     deltaMessage.innerHTML = `Проверяем исходный опорный план X<sub>0</sub> на оптимальность.  <br>
-    Для этого найдем значения потенциалов и оценки свободных клеток.<br>
-    Для нахождения потенциалов в таблице составим для базисных клеток уравнения вида: U<sub>i</sub> + V<sub>j</sub> = c<sub>ij</sub> <br>
-    ${formatPotentials(calculatePotentials(a, b, c, indexesForBaza)[0], calculatePotentials(a, b, c, indexesForBaza)[1], a, b, c, indexesForBaza)}
-    Вычислим оценки свободных клеток по формуле: Δ<sub>ij</sub> = U<sub>i</sub> + V<sub>j</sub> - c<sub>ij</sub> <br>
-    ${formatDeltas(deltas)}`;
+    Для этого найдём значения потенциалов и оценки свободных клеток.<br>
+    ${formatPotentials(u, v, a, b, c, indexesForBaza)}
+    ${formatDeltas(deltas, u, v, c)}`;
 
     let hasPositiveDelta = deltas.some(d => d.delta > 0);
 
@@ -281,20 +281,77 @@ function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
 }
 
 // Функция для форматирования потенциалов 
-function formatPotentials(u, v) {
-    let uText = u.map((val, i) => `U<sub>${i + 1}</sub> = ${val !== null ? val : 'не определен'}`).join('<br>');
-    let vText = v.map((val, j) => `V<sub>${j + 1}</sub> = ${val !== null ? val : 'не определен'}`).join('<br>');
-    return `Потенциалы для поставщиков:<br> ${uText}<br>Для потребителей:<br> ${vText}<br>`;
+// Функция для форматирования потенциалов с пошаговым описанием
+function formatPotentials(u, v, a, b, c, indexesForBaza) {
+    let description = `Для нахождения потенциалов в таблице составим для базисных клеток уравнения вида: U<sub>i</sub> + V<sub>j</sub> = c<sub>ij</sub> <br>`
+    description += `Полагаем U<sub>1</sub> = 0.<br>`;
+
+    // Копируем потенциалы, чтобы не изменять оригинальные массивы
+    let uCalc = new Array(u.length).fill(null);
+    let vCalc = new Array(v.length).fill(null);
+
+    // Начинаем с u_1 = 0
+    uCalc[0] = 0;
+    description += `Для клетки (1, ${indexesForBaza[0].col + 1}): 
+    V<sub>${indexesForBaza[0].col + 1}</sub> = c<sub>${1},${indexesForBaza[0].col + 1}</sub> - U<sub>${1}</sub> = ${c[0][indexesForBaza[0].col]} - ${uCalc[0]} = ${c[0][indexesForBaza[0].col] - uCalc[0]};<br>`;
+    vCalc[indexesForBaza[0].col] = c[0][indexesForBaza[0].col] - uCalc[0];
+
+    // Проходим по всем базисным ячейкам для вычисления остальных потенциалов
+    let calculatedCells = new Set();
+    calculatedCells.add(`0,${indexesForBaza[0].col}`); // Первая ячейка уже обработана
+
+    let i = 1;
+    while (calculatedCells.size < indexesForBaza.length) {
+        for (let cell of indexesForBaza) {
+            let row = cell.row;
+            let col = cell.col;
+
+            if (calculatedCells.has(`${row},${col}`)) continue;
+
+            if (uCalc[row] !== null) {
+                // Если u_i уже известно, вычисляем v_j
+                vCalc[col] = c[row][col] - uCalc[row];
+                description += `Для клетки (${row + 1}, ${col + 1}): V<sub>${col + 1}</sub> = c<sub>${row + 1},${col + 1}</sub> - U<sub>${row + 1}</sub> = ${c[row][col]} - ${uCalc[row]} = ${vCalc[col]};<br>`;
+                calculatedCells.add(`${row},${col}`);
+            } else if (vCalc[col] !== null) {
+                // Если v_j уже известно, вычисляем u_i
+                uCalc[row] = c[row][col] - vCalc[col];
+                description += `Для клетки (${row + 1}, ${col + 1}): U<sub>${row + 1}</sub> = c<sub>${row + 1},${col + 1}</sub> - V<sub>${col + 1}</sub> = ${c[row][col]} - ${vCalc[col]} = ${uCalc[row]};<br>`;
+                calculatedCells.add(`${row},${col}`);
+            }
+        }
+        i++;
+        // Защита от бесконечного цикла
+        if (i > indexesForBaza.length * 2) break;
+    }
+
+    return description;
 }
 
 /**
- * Форматирует дельты для вывода
+ * Форматирует дельты для вывода с пошаговым описанием
+ * @param {Object[]} deltas массив объектов с дельтами { row, col, delta }
+ * @param {number[]} u потенциалы для поставщиков
+ * @param {number[]} v потенциалы для потребителей
+ * @param {number[][]} c матрица цен
+ * @returns {string} отформатированное описание вычислений дельт
  */
-function formatDeltas(deltas) {
-    return deltas.map(d => {
-        let deltaText = `Δ<sub>${d.row + 1},${d.col + 1}</sub> = ${d.delta}`;
-        return deltaText;
-    }).join('<br>');
+ function formatDeltas(deltas, u, v, c) {
+    let description = `<br>Вычислим оценки свободных клеток по формуле: Δ<sub>ij</sub> = U<sub>i</sub> + V<sub>j</sub> - c<sub>ij</sub> <br>`;
+    // Проходим по всем дельтам (свободным ячейкам) и описываем вычисление
+    for (let d of deltas) {
+        let i = d.row;
+        let j = d.col;
+        let delta = d.delta;
+        let ui = u[i] !== null ? u[i] : 'не определён';
+        let vj = v[j] !== null ? v[j] : 'не определён';
+        let cij = c[i][j];
+
+        // Показываем пошаговое вычисление
+        description += `Для клетки (${i + 1}, ${j + 1}): Δ<sub>${i + 1},${j + 1}</sub> = U<sub>${i + 1}</sub> + V<sub>${j + 1}</sub> - c<sub>${i + 1},${j + 1}</sub> = ${ui} + ${vj} - ${cij} = ${delta};<br>`;
+    }
+
+    return description;
 }
 
 /**
@@ -411,11 +468,12 @@ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, ba
     
     table.appendChild(tBody);
 
-    let newBazis = `Новая базисная переменная: x(${bazaCell.row+1},${bazaCell.col+1})`;
+    let newBazis = `Добавляем новую переменную в базис: x(${bazaCell.row+1},${bazaCell.col+1})`;
     let pathString = path.length > 0
         ? `Цикл пересчёта: ${path.map(x => `(${x.row+1},${x.col+1})`).join(' → ')} → (${path[0].row+1},${path[0].col+1})`
         : `Цикл пересчёта: не удалось построить`;
-    let minValueString = `Минимальное значение среди отрицательных Q: ${delta}`;
+    let minValueString = `Для того, чтобы найти новый опорный план находим минимальное значение среди ′–Q′: ${delta}<br>
+    В клетках помеченных ′+Q′ прибавляем мин. значение, а в ′–Q′ вычитаем.`;
 
     let p = document.createElement('p');
     p.innerHTML = `${newBazis} <br> ${pathString} <br> ${minValueString}`;
@@ -437,10 +495,8 @@ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, ba
     deltaMessage.innerHTML = `
     Проверим план X<sub>${iteration}</sub> на оптимальность. <br>
     Для этого найдем значения потенциалов и оценки свободных клеток.<br>
-    Для нахождения потенциалов в таблице составим для базисных клеток уравнения вида: U<sub>i</sub> + V<sub>j</sub> = c<sub>ij</sub> <br>
     ${formatPotentials(calculatePotentials(a, b, c, indexesForBaza)[0], calculatePotentials(a, b, c, indexesForBaza)[1], a, b, c, indexesForBaza)}
-    Вычислим оценки свободных клеток по формуле: Δ<sub>ij</sub> = U<sub>i</sub> + V<sub>j</sub> - c<sub>ij</sub> <br>
-    ${formatDeltas(deltas)}`;
+    ${formatDeltas(deltas, u, v, c)}`;
     
     let hasPositiveDelta = deltas.some(d => d.delta > 0);
     let optimalityMessage = document.createElement('div');
