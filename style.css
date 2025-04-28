@@ -26,21 +26,7 @@ body {
     overflow: hidden; /* Чтобы псевдоэлемент не выходил за границы контейнера */
 }
 
-/* Псевдоэлемент для фонового изображения с прозрачностью */
-.content-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /*background-image: url('./фон.jpg'); /* Фоновое изображение */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0.1; /* Прозрачность 10% (90% видимости) */
-    z-index: -1; /* Помещаем слой под содержимое контейнера */
-}
+
 /* Стили для заголовка h1 */
 h1 {
     text-align: center; /* Выравнивание текста по центру */
@@ -52,11 +38,19 @@ h1 {
     padding: 5px;
     box-sizing: border-box;
 }
+/* Стили для контейнера с таблицей тарифов */
+#c_values {
+    max-width: 850px; /* Ограничиваем ширину */
+    max-height: 500px; /* Ограничиваем высоту */
+    overflow-x: auto; /* Горизонтальный скролл */
+    overflow-y: auto; /* Вертикальный скролл */
+    margin-top: 20px;
+    position: relative;
+}
 table {
     border-collapse: collapse; /* Убираем двойные линии между ячейками */
     text-align: center;
     vertical-align: middle;
-    
 }
 TD, TH {
     width: 80px; 

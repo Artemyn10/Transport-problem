@@ -152,7 +152,7 @@ function draw_C_System(a, b) {
             //const subJ = toSubscript(j + 1);
             input.placeholder = `c${i+1},${j+1}`; 
             input.type = "number";
-            input.style.width = '40px';
+            input.style.width = '50px';
             input.id = `c${i}${j}`;
             td.appendChild(input);
             tr.appendChild(td);
