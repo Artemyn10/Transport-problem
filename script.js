@@ -162,7 +162,7 @@ function solve(a, b, costs) {
         }
     }
 
-    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    drawTableInitialPlan(a, b, costs, x, indexesForBaza);
     potentialMethod(a, b, x, costs, indexesForBaza);
 }
 
@@ -325,7 +325,7 @@ function solveMinimumElement(a, b, costs) {
     }
 
     console.log(`Метод минимального элемента завершен. Базисные клетки:`, indexesForBaza);
-    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    drawTableInitialPlan(a, b, costs, x, indexesForBaza);
     potentialMethod(a, b, x, costs, indexesForBaza);
 }
 
@@ -504,7 +504,7 @@ function solveMinimumElement(a, b, costs) {
     }
 
     console.log(`Метод аппроксимации Фогеля завершен. Базисные клетки:`, indexesForBaza);
-    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    drawTableInitialPlan(a, b, costs, x, indexesForBaza);
     potentialMethod(a, b, x, costs, indexesForBaza);
 }
 
@@ -661,7 +661,7 @@ function solveMinimumElement(a, b, costs) {
     }
 
     console.log(`Метод двойного предпочтения завершен. Базисные клетки:`, indexesForBaza);
-    drawTableNorthwestCorner(a, b, costs, x, indexesForBaza);
+    drawTableInitialPlan(a, b, costs, x, indexesForBaza);
     potentialMethod(a, b, x, costs, indexesForBaza);
 }
 
@@ -799,7 +799,7 @@ function potentialMethod(a, b, x, costs, indexesForBaza) {
         let cellWithMinValueAndMinCost = cellsContainsMinValue.filter((cell) => costs[cell.row][cell.col] == minCost)[0];
 
         // Отрисовка промежуточного решения
-        drawHistorySolutionPorential(a, b, costs, x, indexesForBaza, u, v, path, bazaCell, min_x_value, true, iteration);
+        drawHistorySolutionPotential(a, b, costs, x, indexesForBaza, u, v, path, bazaCell, min_x_value, true, iteration);
 
         // Прибавить/вычесть минимальное значение
         for (let i = 0; i < path.length; i++) {
@@ -831,7 +831,7 @@ function potentialMethod(a, b, x, costs, indexesForBaza) {
         }
 
         // Отрисовка финального решения
-        drawHistorySolutionPorential(a, b, costs, x, indexesForBaza, u, v, path, bazaCell, min_x_value, false, iteration);
+        drawHistorySolutionPotential(a, b, costs, x, indexesForBaza, u, v, path, bazaCell, min_x_value, false, iteration);
 
         // Увеличиваем счётчик итераций
         iteration++;

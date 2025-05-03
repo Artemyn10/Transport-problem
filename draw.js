@@ -41,7 +41,7 @@ function addEventHandler() {
         draw_C_System(res.a, res.b);
         
         const methodChoice = document.getElementById('method-choice') || document.querySelector('.method-choice');
-        const solveBtn = document.getElementById('btn_solve_northwest_corner');
+        const solveBtn = document.getElementById('btn_solve');
         const clearBtn = document.getElementById('btn_clear_table');
 
         if (methodChoice) methodChoice.style.display = 'inline-block';
@@ -49,7 +49,7 @@ function addEventHandler() {
         if (clearBtn) clearBtn.style.display = 'inline-block';
     });
     
-    document.getElementById('btn_solve_northwest_corner').addEventListener('click', () => {
+    document.getElementById('btn_solve').addEventListener('click', () => {
         let res = getValuesFor_A_B();
     
         let c = [];
@@ -176,7 +176,7 @@ function draw_C_System(a, b) {
  * @param {number[][]} x матрица с перевозками
  * @param {Cell[]} indexesForBaza индексы для базисных переменных
  */
-function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
+function drawTableInitialPlan(a, b, c, x, indexesForBaza) {
     let m = a.length;
     let n = b.length;
 
@@ -279,8 +279,7 @@ function drawTableNorthwestCorner(a, b, c, x, indexesForBaza) {
         solvedMatrix.appendChild(graphElement);
     }
 }
-
-// Функция для форматирования потенциалов 
+ 
 // Функция для форматирования потенциалов с пошаговым описанием
 function formatPotentials(u, v, a, b, c, indexesForBaza) {
     let description = `Для нахождения потенциалов в таблице составим для базисных клеток уравнения вида: U<sub>i</sub> + V<sub>j</sub> = c<sub>ij</sub> <br>`
@@ -369,7 +368,7 @@ function formatPotentials(u, v, a, b, c, indexesForBaza) {
  * @param {boolean} flag костыль :)
  * @param {number} iteration номер итерации
  */
-function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
+function drawHistorySolutionPotential(a, b, c, x, indexesForBaza, u, v, path, bazaCell, delta, flag, iteration) {
     let m = a.length;
     let n = b.length;
     
@@ -489,6 +488,8 @@ function drawHistorySolutionPorential(a, b, c, x, indexesForBaza, u, v, path, ba
     zMessage.style.fontWeight = 'bold';
     zMessage.innerHTML = `Суммарные транспортные расходы: Z<sub>${iteration}</sub> = ${totalCost}`;
 
+    // Вычисляем потенциалы u и v
+    [u, v] = calculatePotentials(a, b, c, indexesForBaza);
     let deltas = calculateDeltas(a, b, c, x, indexesForBaza);
     let deltaMessage = document.createElement('div');
     deltaMessage.style.marginBottom = '20px';

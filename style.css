@@ -59,7 +59,7 @@ TD, TH {
     text-align: center;
     vertical-align: middle;
 }
-#btn_save_params, #btn_draw_c_system, #btn_solve_northwest_corner{
+#btn_save_params, #btn_draw_c_system, #btn_solve{
     background-color: #4CAF50; /* Зелёный цвет фона */
     color: rgb(253, 253, 253); /* Цвет текста */
     font-size: 16px; /* Размер шрифта */
@@ -70,13 +70,13 @@ TD, TH {
 }
 
 /* Эффект при наведении мыши */
-#btn_save_params:hover, #btn_draw_c_system:hover, #btn_solve_northwest_corner:hover{
+#btn_save_params:hover, #btn_draw_c_system:hover, #btn_solve:hover{
     background-color: #87af89; /* Темно-зелёный цвет при наведении */
     transform: scale(0.95); /* Уменьшение размера кнопки */
 }
 
 /* Эффект при нажатии */
-#btn_save_params:active, #btn_draw_c_system:active, #btn_solve_northwest_corner:active {
+#btn_save_params:active, #btn_draw_c_system:active, #btn_solve:active {
     background-color: #3e8e41; /* Ещё более тёмный зелёный */
     transform: scale(0.95); /* Уменьшение размера кнопки */
 }
