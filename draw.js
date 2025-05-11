@@ -110,6 +110,10 @@ function draw_C_System(a, b) {
     let n = b.length;
     
     let table = document.createElement('table');
+    table.style.borderCollapse = 'collapse';
+    table.style.margin = '20px 0';
+    table.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
+    
     let tBody = document.createElement('tbody');
 
     let instructionText = document.createElement('p');
@@ -120,40 +124,47 @@ function draw_C_System(a, b) {
     let td1 = document.createElement('td');
     td1.appendChild(document.createTextNode(`a\\b`));
     td1.style.background = 'gray';
+    td1.style.color = 'white';
+    td1.style.padding = '10px';
+    td1.style.border = '1px solid #ddd';
     trHead.appendChild(td1);
+    
     for (let i = 0; i < n; i++) {
         let td = document.createElement('td');
         td.style.background = 'silver';
+        td.style.padding = '10px';
+        td.style.border = '1px solid #ddd';
+        td.style.textAlign = 'center';
         td.appendChild(document.createTextNode(`${b[i]}`));
         trHead.appendChild(td);
     }
     tBody.appendChild(trHead);
-    
-    // Функция для преобразования числа в нижние индексы
-    const toSubscript = (num) => {
-        const subscripts = {
-            '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
-            '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉'
-        };
-        return String(num).split('').map(digit => subscripts[digit]).join('');
-    };
 
     for (let i = 0; i < m; i++) {
         let tr = document.createElement('tr');
         let tdZero = document.createElement('td');
         tdZero.style.background = 'silver';
+        tdZero.style.padding = '10px';
+        tdZero.style.border = '1px solid #ddd';
+        tdZero.style.textAlign = 'center';
         tdZero.appendChild(document.createTextNode(`${a[i]}`));
         tr.appendChild(tdZero);
+        
         for (let j = 0; j < n; j++)  {
             let td = document.createElement('td');
+            td.style.padding = '10px';
+            td.style.border = '1px solid #ddd';
+            td.style.textAlign = 'center';
+            
             let input = document.createElement('input');
-            // Формируем placeholder с нижними индексами
-            //const subI = toSubscript(i + 1);
-            //const subJ = toSubscript(j + 1);
             input.placeholder = `c${i+1},${j+1}`; 
             input.type = "number";
-            input.style.width = '50px';
-            input.id = `c${i}${j}`;
+            input.style.width = '60px';
+            input.style.padding = '5px';
+            input.style.border = '1px solid #ddd';
+            input.style.borderRadius = '4px';
+            input.style.textAlign = 'center';
+            input.id = `c${i}${j}`;           
             td.appendChild(input);
             tr.appendChild(td);
         }
