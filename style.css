@@ -22,7 +22,7 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Тень для красоты */
     position: relative; /* Для позиционирования внутри body */
     z-index: 1; /* Помещаем контейнер над псевдоэлементом */
-    min-height: 50px; /* Минимальная высота контейнера */
+   /* min-height: 600px;  Минимальная высота контейнера */
     overflow: hidden; /* Чтобы псевдоэлемент не выходил за границы контейнера */
 }
 
@@ -44,7 +44,7 @@ h1 {
     max-height: 500px; /* Ограничиваем высоту */
     overflow-x: auto; /* Горизонтальный скролл */
     overflow-y: auto; /* Вертикальный скролл */
-    margin-top: 20px;
+    margin-top: 5px;
     position: relative;
 }
 /* Общие стили для всех таблиц */
@@ -80,10 +80,43 @@ table td:first-child {
     font-weight: bold;
 }
 
+/* Стили для таблиц с классом table-tariff */
+.table-tariff {
+    border: 2px solid #4a90e2;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table-tariff th {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: bold;
+    min-width: 60px;
+}
+
+.table-tariff td {
+    background-color: silver;
+    min-width: 60px;
+}
+
+.table-tariff input {
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    width: 60px;
+}
+
+.table-tariff input:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74,144,226,0.3);
+    outline: none;
+}
 #btn_save_params, #btn_draw_c_system, #btn_solve{
     background-color: #4CAF50; /* Зелёный цвет фона */
     color: rgb(253, 253, 253); /* Цвет текста */
-    font-size: 16px; /* Размер шрифта */
+    font-size: 18px; /* Размер шрифта */
     padding: 10px 20px; /* Отступы внутри кнопки */
     border-radius: 5px; /* Скругление углов */
     cursor: pointer; /* Указатель мыши при наведении */
@@ -91,31 +124,159 @@ table td:first-child {
 }
 
 /* Эффект при наведении мыши */
-#btn_save_params:hover, #btn_draw_c_system:hover, #btn_solve:hover{
-    background-color: #87af89; /* Темно-зелёный цвет при наведении */
-    transform: scale(0.95); /* Уменьшение размера кнопки */
+#btn_save_params:hover, #btn_draw_c_system:hover, #btn_solve:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Эффект при нажатии */
 #btn_save_params:active, #btn_draw_c_system:active, #btn_solve:active {
-    background-color: #3e8e41; /* Ещё более тёмный зелёный */
-    transform: scale(0.95); /* Уменьшение размера кнопки */
+    background-color: #3e8e41;
+    transform: translateY(0);
 }
 
-#btn_clear_table{
-    background-color: #e02f29; 
-    color: rgb(253, 253, 253); /* Цвет текста */
-    font-size: 16px; /* Размер шрифта */
-    padding: 10px 20px; /* Отступы внутри кнопки */
-    border-radius: 5px; /* Скругление углов */
-    cursor: pointer; /* Указатель мыши при наведении */
-    transition: background-color 0.3s; /* Анимация при изменении фона */
+#btn_clear_table {
+    background-color: #e02f29;
+    color: white;
+    font-size: 18px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
 }
-#btn_clear_table:hover{
-    background-color: #d6635b;
-    transform: scale(0.95); /* Уменьшение размера кнопки */
+
+#btn_clear_table:hover {
+    background-color: #d32f2f;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
+
 #btn_clear_table:active {
-    background-color: #81261b;
-    transform: scale(0.95); /* Уменьшение размера кнопки */
+    background-color: #b71c1c;
+    transform: translateY(0);
+}
+#count_a, #count_b {
+    width: 150px;
+    font-size: 16px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 5px solid #ddd;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+#count_a:focus, #count_b:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74,144,226,0.3);
+    outline: none;
+}
+
+/* Стили для кнопок */
+#btn_save_params, #btn_draw_c_system, #btn_solve {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
+}
+
+/* Стили для сообщений */
+#condition, #sum_a, #sum_b, #method_description {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: transparent;
+    border-left: 0;
+    transition: all 0.3s ease;
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+#condition:not(:empty), #sum_a:not(:empty), #sum_b:not(:empty), #method_description:not(:empty) {
+    background-color: rgba(248, 249, 250, 0.8);
+    border-left: 4px solid #4a90e2;
+    opacity: 1;
+    height: auto;
+}
+
+/* Стили для радио-кнопок */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #4a90e2;
+    border-radius: 50%;
+    outline: none;
+    margin-right: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+input[type="radio"]:checked {
+    border-color: #4CAF50;
+    background-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+}
+
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+input[type="radio"]:hover {
+    border-color: #45a049;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+}
+
+/* Стили для меток радио-кнопок */
+label {
+    display: inline-flex;
+    align-items: center;
+    margin: 1px 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 5px 5px;
+    border-radius: 4px;
+}
+
+label:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+input[type="radio"]:checked + label {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Стили для заголовков планов */
+div[style*="font-weight: bold"] {
+    color: #333;
+    font-size: 18px;
+    margin: 15px 0;
+    padding: 5px 0;
+    border-bottom: 2px solid #4a90e2;
+}
+
+/* Стили для разделительной линии */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #4a90e2, transparent);
+    margin: 30px 0;
 }

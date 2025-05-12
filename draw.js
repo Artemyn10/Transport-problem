@@ -118,7 +118,7 @@ function draw_C_System(a, b) {
 
     let instructionText = document.createElement('p');
     instructionText.textContent = 'Введите тарифы: ';
-    instructionText.style.marginBottom = '10px';
+    //instructionText.style.marginBottom = '10px';
 
     let trHead = document.createElement('tr');
     let td1 = document.createElement('td');
@@ -432,7 +432,7 @@ function drawHistorySolutionPotential(a, b, c, x, indexesForBaza, u, v, path, ba
     
             td.innerHTML = `
                 <div style="display: flex; justify-content: space-between;">
-                    <span style="color: red;">${qValue}</span>
+                    <span style="color: red; font-weight: bold;">${qValue}</span>
                     <span style="color: rgb(58, 0, 248);">${c[i][j]}</span>
                 </div>
                 <div style="text-align: center;">${x[i][j]}</div>
@@ -690,15 +690,29 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
  * @param {number} n кол-во потребителей
  */
 function drawSystem(m, n) {
-    let htmlA = 'Введите возможности поставщиков: <br><br>';
+    // Создаём таблицу для поставщиков
+    let htmlA = 'Введите возможности поставщиков: <br>';
+    htmlA += '<table class="table-tariff"><tr>';
     for (let i = 1; i <= m; i++) {
-        htmlA += `A<sub>${i}</sub> = <input type="text" id="A${i}" style=" font-size: 16px; width: 40px;"> `;
+        htmlA += `<th>A<sub>${i}</sub></th>`;
     }
+    htmlA += '</tr><tr>';
+    for (let i = 1; i <= m; i++) {
+        htmlA += `<td><input type="number" id="A${i}"></td>`;
+    }
+    htmlA += '</tr></table></div>';
 
-    let htmlB = 'Введите потребности потребителей: <br><br>';
+    // Создаём таблицу для потребителей
+    let htmlB = 'Введите потребности потребителей: <br>';
+    htmlB += '<table class="table-tariff"><tr>';
     for (let i = 1; i <= n; i++) {
-        htmlB += `B<sub>${i}</sub> = <input type="text" id="B${i}" style=" font-size: 16px; width: 40px;"> `;
+        htmlB += `<th>B<sub>${i}</sub></th>`;
     }
+    htmlB += '</tr><tr>';
+    for (let i = 1; i <= n; i++) {
+        htmlB += `<td><input type="number" id="B${i}"></td>`;
+    }
+    htmlB += '</tr></table></div>';
 
     document.getElementById('a_values').innerHTML = htmlA;
     document.getElementById('b_values').innerHTML = htmlB;
