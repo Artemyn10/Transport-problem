@@ -85,8 +85,6 @@ function addEventHandler() {
 
         document.getElementById('title_1').style.display = 'none';
 
-        document.getElementById('ans_1').innerHTML = '';
-        document.getElementById('ans_2').innerHTML = '';
         document.getElementById('condition').innerHTML = '';
         document.getElementById('sum_a').innerHTML = '';
         document.getElementById('sum_b').innerHTML = '';
