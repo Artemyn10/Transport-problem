@@ -698,7 +698,7 @@ function drawSystem(m, n) {
     }
     htmlA += '</tr><tr>';
     for (let i = 1; i <= m; i++) {
-        htmlA += `<td><input type="number" id="A${i}"></td>`;
+        htmlA += `<td><input type="number" id="A${i}" placeholder="a${i}"></td>`;
     }
     htmlA += '</tr></table></div>';
 
@@ -710,7 +710,7 @@ function drawSystem(m, n) {
     }
     htmlB += '</tr><tr>';
     for (let i = 1; i <= n; i++) {
-        htmlB += `<td><input type="number" id="B${i}"></td>`;
+        htmlB += `<td><input type="number" id="B${i}" placeholder="b${i}"></td>`;
     }
     htmlB += '</tr></table></div>';
 
