@@ -1,84 +1,5 @@
-/**
- * Проверка условия разрешимости транспортной задачи и обновление данных
- * @param {number[]} a Значения для поставщиков
- * @param {number[]} b Значения для потребителей
- * @param {number[][]} costs Значения тарифов
- * @returns {Object} Объект с обновленными a, b и costs
- */
- function checkFeasibility(a, b, costs) {
-    let aSum = a.reduce((prev, cur) => prev + cur, 0);
-    let bSum = b.reduce((prev, cur) => prev + cur, 0);
 
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
 
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        document.getElementById('condition').innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-    } else if (aSum === bSum) {
-        document.getElementById('condition').innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у поставщиков. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-    }
-
-    return { a, b, costs };
-}
-
-/**
- * Определяет тип транспортной задачи и добавляет фиктивных поставщиков/потребителей при необходимости
- * @param {number[]} a Значения для поставщиков (модифицируется)
- * @param {number[]} b Значения для потребителей (модифицируется)
- * @param {number[][]} costs Значения тарифов (модифицируется)
- * @param {HTMLElement} conditionElement Элемент для вывода условия разрешимости
- * @returns {string} Тип задачи: "открытая" или "закрытая"
- */
- function determineTaskType(a, b, costs, conditionElement) {
-    // Вычисление суммы запасов и потребностей
-    let aSum = a.reduce((prev, cur) => prev + cur, 0);
-    let bSum = b.reduce((prev, cur) => prev + cur, 0);
-
-    // Вывод суммы по поставщикам и потребителям
-    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
-    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
-
-    // Проверка условия разрешимости
-    if (aSum > bSum) {
-        b.push(aSum - bSum);
-        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
-        for (let i = 0; i < a.length; i++) {
-            costs[i].push(0);
-        }
-        return "открытая";
-    } else if (aSum < bSum) {
-        a.push(bSum - aSum);
-        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
-        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
-        let newRow = [];
-        for (let i = 0; i < b.length; i++) {
-            newRow.push(0);
-        }
-        costs.push(newRow);
-        return "открытая";
-    } else {
-        conditionElement.innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
-        <br>Тип задачи: закрытая транспортная задача.`;
-        return "закрытая";
-    }
-}
 /**
  * северо-западный угол
  * @param {number[]} a значения для поставщиков
@@ -102,6 +23,8 @@ function solve(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
+    document.getElementById('solved_matrix').replaceChildren();
+    
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
     let taskType = determineTaskType(a, b, costs, conditionElement);
@@ -120,12 +43,19 @@ function solve(a, b, costs) {
 
     let indexesForBaza = [];
     let [i1, j1] = [0, 0];
+    let step = 1;
 
     while (true) {
         // Проверка условия: если aCopy[i1] = bCopy[j1], сравниваем c[i1,j1+1] и c[i1+1,j1]
         if (aCopy[i1] === bCopy[j1]) {
             x[i1][j1] = aCopy[i1]; // Заполняем ячейку
             indexesForBaza.push(new Cell(i1, j1));
+            
+            // Отображаем промежуточный шаг
+            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                `Шаг ${step}: Распределяем ${aCopy[i1]} единиц в клетку (${i1+1},${j1+1})<br>
+                Остатки: a<sub>${i1+1}</sub> = 0, b<sub>${j1+1}</sub> = 0`);
+            
             bCopy[j1] = 0; // Обнуляем столбец
             aCopy[i1] = 0; // Обнуляем строку
 
@@ -143,16 +73,30 @@ function solve(a, b, costs) {
         } else if (aCopy[i1] < bCopy[j1]) {
             x[i1][j1] = aCopy[i1];
             indexesForBaza.push(new Cell(i1, j1));
+            
+            // Отображаем промежуточный шаг
+            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                `Шаг ${step}: Распределяем ${aCopy[i1]} единиц в клетку (${i1+1},${j1+1})<br>
+                Остатки: a<sub>${i1+1}</sub> = 0, b<sub>${j1+1}</sub> = ${bCopy[j1] - aCopy[i1]}`);
+            
             bCopy[j1] -= aCopy[i1];
             aCopy[i1] = 0;
             i1++;
         } else {
             x[i1][j1] = bCopy[j1];
             indexesForBaza.push(new Cell(i1, j1));
+            
+            // Отображаем промежуточный шаг
+            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                `Шаг ${step}: Распределяем ${bCopy[j1]} единиц в клетку (${i1+1},${j1+1})<br>
+                Остатки: a<sub>${i1+1}</sub> = ${aCopy[i1] - bCopy[j1]}, b<sub>${j1+1}</sub> = 0`);
+            
             aCopy[i1] -= bCopy[j1];
             bCopy[j1] = 0;
             j1++;
         }
+
+        step++;
 
         let aSum = aCopy.reduce((prev, cur) => prev += cur, 0);
         let bSum = bCopy.reduce((prev, cur) => prev += cur, 0);
@@ -205,12 +149,6 @@ function solve(a, b, costs) {
 //             j1++;
 //         }
 
-// Проверка условия разрешимости, определение типа ТЗ
-function typeTZ(a, b)
-{
-    
-}
-
 
  /**
  * Метод минимального элемента
@@ -234,6 +172,8 @@ function solveMinimumElement(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
+    document.getElementById('solved_matrix').replaceChildren();
+    
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
     let taskType = determineTaskType(a, b, costs, conditionElement);
@@ -254,6 +194,7 @@ function solveMinimumElement(a, b, costs) {
     let aCopy = [...a];
     let bCopy = [...b];
     let indexesForBaza = [];
+    let step = 1;
     
     // Шаг 1: Распределяем грузы методом минимального элемента
     while (aCopy.some(val => val > 0) && bCopy.some(val => val > 0)) {
@@ -276,8 +217,16 @@ function solveMinimumElement(a, b, costs) {
         let allocation = Math.min(aCopy[minI], bCopy[minJ]);
         x[minI][minJ] = allocation;
         indexesForBaza.push(new Cell(minI, minJ));
+        
+        // Отображаем промежуточный шаг
+        drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+            `Шаг ${step}: Выбираем клетку с минимальным тарифом (${minI+1},${minJ+1}) = ${costs[minI][minJ]}<br>
+            Распределяем ${allocation} единиц<br>
+            Остатки: a<sub>${minI+1}</sub> = ${aCopy[minI] - allocation}, b<sub>${minJ+1}</sub> = ${bCopy[minJ] - allocation}`);
+        
         aCopy[minI] -= allocation;
         bCopy[minJ] -= allocation;
+        step++;
     }
 
     // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
@@ -293,13 +242,18 @@ function solveMinimumElement(a, b, costs) {
                     // Проверяем, что клетка еще не базисная
                     if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
                         // Проверяем, что добавление клетки не создаст цикл
-                        // (простой способ: добавляем клетку, если строка или столбец еще не полностью заняты)
                         let rowCount = indexesForBaza.filter(cell => cell.row === i).length;
                         let colCount = indexesForBaza.filter(cell => cell.col === j).length;
-                        if (rowCount === 0 || colCount === 0) { // Добавляем, если строка или столбец пустые
+                        if (rowCount === 0 || colCount === 0) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Устанавливаем базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }
@@ -314,7 +268,13 @@ function solveMinimumElement(a, b, costs) {
                         if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }

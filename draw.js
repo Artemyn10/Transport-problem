@@ -176,6 +176,118 @@ function draw_C_System(a, b) {
     cValuesContainer.appendChild(instructionText);
     cValuesContainer.appendChild(table);
 }
+/**
+ * Определяет тип транспортной задачи и добавляет фиктивных поставщиков/потребителей при необходимости
+ * @param {number[]} a Значения для поставщиков (модифицируется)
+ * @param {number[]} b Значения для потребителей (модифицируется)
+ * @param {number[][]} costs Значения тарифов (модифицируется)
+ * @param {HTMLElement} conditionElement Элемент для вывода условия разрешимости
+ * @returns {string} Тип задачи: "открытая" или "закрытая"
+ */
+function determineTaskType(a, b, costs, conditionElement) {
+    // Вычисление суммы запасов и потребностей
+    let aSum = a.reduce((prev, cur) => prev + cur, 0);
+    let bSum = b.reduce((prev, cur) => prev + cur, 0);
+
+    // Вывод суммы по поставщикам и потребителям
+    document.getElementById('sum_a').innerHTML = `Возможности поставщиков: ${aSum}`;
+    document.getElementById('sum_b').innerHTML = `Потребности потребителей: ${bSum}`;
+
+    // Проверка условия разрешимости
+    if (aSum > bSum) {
+        b.push(aSum - bSum);
+        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у поставщиков больше, чем потребностей у потребителей. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного потребителя с тарифами 0.`;
+        for (let i = 0; i < a.length; i++) {
+            costs[i].push(0);
+        }
+        return "открытая";
+    } else if (aSum < bSum) {
+        a.push(bSum - aSum);
+        conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
+        <br>Тип задачи: открытая транспортная задача. Следует добавить фиктивного поставщика с тарифами 0.`;
+        let newRow = [];
+        for (let i = 0; i < b.length; i++) {
+            newRow.push(0);
+        }
+        costs.push(newRow);
+        return "открытая";
+    } else {
+        conditionElement.innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
+        <br>Тип задачи: закрытая транспортная задача.`;
+        return "закрытая";
+    }
+}
+/**
+ * Отрисовка промежуточного шага построения опорного плана
+ * @param {number[]} a значения для поставщиков
+ * @param {number[]} b значения для потребителей
+ * @param {number[][]} c цены
+ * @param {number[][]} x матрица с перевозками
+ * @param {Cell[]} indexesForBaza индексы для базисных переменных
+ * @param {string} stepDescription описание текущего шага
+ */
+function drawIntermediateStep(a, b, c, x, indexesForBaza, stepDescription) {
+    let m = a.length;
+    let n = b.length;
+    
+    let table = document.createElement('table');
+    table.style.marginBottom = '20px';
+    let tBody = document.createElement('tbody');
+
+    let stepHeader = document.createElement('div');
+    stepHeader.style.fontWeight = 'bold';
+    stepHeader.style.marginBottom = '10px';
+    stepHeader.innerHTML = stepDescription;
+    
+    let trHead = document.createElement('tr');
+    let td1 = document.createElement('td');
+    td1.appendChild(document.createTextNode(`a\\b`));
+    td1.style.background = 'gray';
+    trHead.appendChild(td1);
+    for (let i = 0; i < n; i++) {
+        let td = document.createElement('td');
+        td.style.background = 'silver';
+        td.appendChild(document.createTextNode(`${b[i]}`));
+        trHead.appendChild(td);
+    }
+    tBody.appendChild(trHead);
+
+    for (let i = 0; i < m; i++) {
+        let tr = document.createElement('tr');
+        let tdZero = document.createElement('td');
+        tdZero.style.background = 'silver';
+        tdZero.appendChild(document.createTextNode(`${a[i]}`));
+        tr.appendChild(tdZero);
+        for (let j = 0; j < n; j++) {
+            let td = document.createElement('td');
+            td.innerHTML = `
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: red;"></span>
+                    <span style="color: rgb(58, 0, 248);">${c[i][j]}</span>
+                </div>
+                <div style="text-align: center;">${x[i][j]}</div>`;
+
+            for (let cell of indexesForBaza) {
+                if (i == cell.row && j == cell.col) {
+                    td.style.background = 'Lightgreen';
+                }
+            }
+
+            tr.appendChild(td);
+        }
+        tBody.appendChild(tr);
+    }
+
+    table.appendChild(tBody);
+
+    let div = document.createElement('div');
+    div.style.marginBottom = '20px';
+    div.appendChild(stepHeader);
+    div.appendChild(table);
+
+    document.getElementById('solved_matrix').appendChild(div);
+}
 
 /**
  * Отрисовка HTML таблицы решения для исходного опорного плана
@@ -192,7 +304,7 @@ function drawTableInitialPlan(a, b, c, x, indexesForBaza) {
     let planHeader = document.createElement('div');
     planHeader.style.fontWeight = 'bold';
     planHeader.style.marginBottom = '10px';
-    planHeader.innerHTML = `План X<sub>0</sub>:`;
+    planHeader.innerHTML = `Итоговый исходный опорный план X<sub>0</sub>:`;
     
     let table = document.createElement('table');
     table.style.marginBottom = '20px';
@@ -274,19 +386,20 @@ function drawTableInitialPlan(a, b, c, x, indexesForBaza) {
         optimalityMessage.style.fontSize = '24px';
     }
 
-    let solvedMatrix = document.getElementById('solved_matrix');
-    solvedMatrix.replaceChildren();
-    solvedMatrix.appendChild(planHeader);
-    solvedMatrix.appendChild(table);
-    solvedMatrix.appendChild(costMessage);
-    solvedMatrix.appendChild(deltaMessage);
-    solvedMatrix.appendChild(optimalityMessage);
+    let div = document.createElement('div');
+    div.appendChild(planHeader);
+    div.appendChild(table);
+    div.appendChild(costMessage);
+    div.appendChild(deltaMessage);
+    div.appendChild(optimalityMessage);
 
     // Добавляем граф, если план оптимален
     if (!hasPositiveDelta) {
         let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, 0);
-        solvedMatrix.appendChild(graphElement);
+        div.appendChild(graphElement);
     }
+
+    document.getElementById('solved_matrix').appendChild(div);
 }
  
 // Функция для форматирования потенциалов с пошаговым описанием
