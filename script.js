@@ -1,5 +1,3 @@
-
-
 /**
  * северо-западный угол
  * @param {number[]} a значения для поставщиков
@@ -27,7 +25,7 @@ function solve(a, b, costs) {
     
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
-    let taskType = determineTaskType(a, b, costs, conditionElement);
+    let { taskType, fictiveSupplierIndex, fictiveConsumerIndex } = determineTaskType(a, b, costs, conditionElement);
 
     let x = [];
     for (let i = 0; i < a.length; i++) {
@@ -148,9 +146,7 @@ function solve(a, b, costs) {
 //             bCopy[j1] = 0;
 //             j1++;
 //         }
-
-
- /**
+/**
  * Метод минимального элемента
  * @param {number[]} a Значения для поставщиков
  * @param {number[]} b Значения для потребителей
@@ -176,7 +172,7 @@ function solveMinimumElement(a, b, costs) {
     
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
-    let taskType = determineTaskType(a, b, costs, conditionElement);
+    let { fictiveSupplierIndex, fictiveConsumerIndex } = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;
@@ -195,15 +191,22 @@ function solveMinimumElement(a, b, costs) {
     let bCopy = [...b];
     let indexesForBaza = [];
     let step = 1;
-    
-    // Шаг 1: Распределяем грузы методом минимального элемента
-    while (aCopy.some(val => val > 0) && bCopy.some(val => val > 0)) {
+
+    // Шаг 1: Распределяем грузы методом минимального элемента, исключая фиктивные
+    while (aCopy.some((val, i) => val > 0 && i !== fictiveSupplierIndex) && 
+           bCopy.some((val, j) => val > 0 && j !== fictiveConsumerIndex)) {
         let minCost = Infinity;
         let minI = -1;
         let minJ = -1;
 
         for (let i = 0; i < aCopy.length; i++) {
+            // Пропускаем фиктивного поставщика
+            if (i === fictiveSupplierIndex) continue;
+            
             for (let j = 0; j < bCopy.length; j++) {
+                // Пропускаем фиктивного потребителя
+                if (j === fictiveConsumerIndex) continue;
+                
                 if (aCopy[i] > 0 && bCopy[j] > 0 && costs[i][j] < minCost) {
                     minCost = costs[i][j];
                     minI = i;
@@ -229,7 +232,44 @@ function solveMinimumElement(a, b, costs) {
         step++;
     }
 
-    // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
+    // Шаг 2: Распределяем оставшийся груз через фиктивного поставщика/потребителя
+    if (fictiveSupplierIndex !== -1) {
+        for (let j = 0; j < n; j++) {
+            if (j === fictiveConsumerIndex) continue;
+            if (bCopy[j] > 0) {
+                x[fictiveSupplierIndex][j] = bCopy[j];
+                indexesForBaza.push(new Cell(fictiveSupplierIndex, j));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного поставщика<br>
+                    Распределяем ${bCopy[j]} единиц в клетку (${fictiveSupplierIndex+1},${j+1})<br>
+                    Остатки: b<sub>${j+1}</sub> = 0`);
+                
+                bCopy[j] = 0;
+                step++;
+            }
+        }
+    }
+
+    if (fictiveConsumerIndex !== -1) {
+        for (let i = 0; i < m; i++) {
+            if (i === fictiveSupplierIndex) continue;
+            if (aCopy[i] > 0) {
+                x[i][fictiveConsumerIndex] = aCopy[i];
+                indexesForBaza.push(new Cell(i, fictiveConsumerIndex));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного потребителя<br>
+                    Распределяем ${aCopy[i]} единиц в клетку (${i+1},${fictiveConsumerIndex+1})<br>
+                    Остатки: a<sub>${i+1}</sub> = 0`);
+                
+                aCopy[i] = 0;
+                step++;
+            }
+        }
+    }
+
+    // Шаг 3: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
     let expectedBazisCount = m + n - 1;
     if (indexesForBaza.length < expectedBazisCount) {
         console.log(`Текущее количество базисных клеток: ${indexesForBaza.length}, ожидается: ${expectedBazisCount}. Добавляем базисные нули.`);
@@ -295,7 +335,7 @@ function solveMinimumElement(a, b, costs) {
  * @param {number[]} b Значения для потребителей
  * @param {number[][]} costs Значения тарифов
  */
- function solveVogelApproximation(a, b, costs) {
+function solveVogelApproximation(a, b, costs) {
     // Описание сути метода аппроксимации Фогеля
     let methodDescription = `
         <div style="margin-bottom: 20px;">
@@ -313,10 +353,11 @@ function solveMinimumElement(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
+    document.getElementById('solved_matrix').replaceChildren();
 
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
-    let taskType = determineTaskType(a, b, costs, conditionElement);
+    let { taskType, fictiveSupplierIndex, fictiveConsumerIndex } = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;
@@ -336,19 +377,21 @@ function solveMinimumElement(a, b, costs) {
     let indexesForBaza = [];
     let rowAvailable = Array(m).fill(true);
     let colAvailable = Array(n).fill(true);
+    let step = 1;
 
-    // Шаг 1: Распределяем грузы методом аппроксимации Фогеля
-    while (rowAvailable.some(val => val) && colAvailable.some(val => val)) {
+    // Шаг 1: Распределяем грузы методом аппроксимации Фогеля, исключая фиктивные
+    while (rowAvailable.some((val, i) => val && i !== fictiveSupplierIndex) && 
+           colAvailable.some((val, j) => val && j !== fictiveConsumerIndex)) {
         // Вычисляем штрафы для строк
         let rowPenalties = [];
         for (let i = 0; i < m; i++) {
-            if (!rowAvailable[i]) {
+            if (!rowAvailable[i] || i === fictiveSupplierIndex) {
                 rowPenalties.push({ penalty: -1, index: i });
                 continue;
             }
             let rowCosts = [];
             for (let j = 0; j < n; j++) {
-                if (colAvailable[j]) {
+                if (colAvailable[j] && j !== fictiveConsumerIndex) {
                     rowCosts.push(costs[i][j]);
                 }
             }
@@ -360,13 +403,13 @@ function solveMinimumElement(a, b, costs) {
         // Вычисляем штрафы для столбцов
         let colPenalties = [];
         for (let j = 0; j < n; j++) {
-            if (!colAvailable[j]) {
+            if (!colAvailable[j] || j === fictiveConsumerIndex) {
                 colPenalties.push({ penalty: -1, index: j });
                 continue;
             }
             let colCosts = [];
             for (let i = 0; i < m; i++) {
-                if (rowAvailable[i]) {
+                if (rowAvailable[i] && i !== fictiveSupplierIndex) {
                     colCosts.push(costs[i][j]);
                 }
             }
@@ -387,7 +430,7 @@ function solveMinimumElement(a, b, costs) {
             minCost = Infinity;
             minJ = -1;
             for (let j = 0; j < n; j++) {
-                if (colAvailable[j] && costs[selectedIndex][j] < minCost) {
+                if (colAvailable[j] && j !== fictiveConsumerIndex && costs[selectedIndex][j] < minCost) {
                     minCost = costs[selectedIndex][j];
                     minJ = j;
                 }
@@ -398,7 +441,7 @@ function solveMinimumElement(a, b, costs) {
             minCost = Infinity;
             minI = -1;
             for (let i = 0; i < m; i++) {
-                if (rowAvailable[i] && costs[i][selectedIndex] < minCost) {
+                if (rowAvailable[i] && i !== fictiveSupplierIndex && costs[i][selectedIndex] < minCost) {
                     minCost = costs[i][selectedIndex];
                     minI = i;
                 }
@@ -412,15 +455,68 @@ function solveMinimumElement(a, b, costs) {
         let allocation = Math.min(aCopy[minI], bCopy[minJ]);
         x[minI][minJ] = allocation;
         indexesForBaza.push(new Cell(minI, minJ));
+
+        // Отображаем промежуточный шаг
+        let stepDescription = `Шаг ${step}: `;
+        if (isRow) {
+            stepDescription += `Выбираем строку ${minI + 1} с максимальным штрафом ${maxRowPenalty}<br>`;
+        } else {
+            stepDescription += `Выбираем столбец ${minJ + 1} с максимальным штрафом ${maxColPenalty}<br>`;
+        }
+        stepDescription += `В выбранной ${isRow ? 'строке' : 'столбце'} находим клетку с минимальным тарифом (${minI + 1},${minJ +1}) = ${costs[minI][minJ]}<br>`;
+        stepDescription += `Распределяем ${allocation} единиц<br>`;
+        stepDescription += `Остатки: a<sub>${minI + 1}</sub> = ${aCopy[minI] - allocation}, b<sub>${minJ + 1}</sub> = ${bCopy[minJ] - allocation}`;
+
+        drawIntermediateStep(a, b, costs, x, indexesForBaza, stepDescription);
+
         aCopy[minI] -= allocation;
         bCopy[minJ] -= allocation;
 
         // Обновляем доступность строки и столбца
         if (aCopy[minI] === 0) rowAvailable[minI] = false;
         if (bCopy[minJ] === 0) colAvailable[minJ] = false;
+
+        step++;
     }
 
-    // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
+    // Шаг 2: Распределяем оставшийся груз через фиктивного поставщика/потребителя
+    if (fictiveSupplierIndex !== -1) {
+        for (let j = 0; j < n; j++) {
+            if (j === fictiveConsumerIndex) continue;
+            if (bCopy[j] > 0) {
+                x[fictiveSupplierIndex][j] = bCopy[j];
+                indexesForBaza.push(new Cell(fictiveSupplierIndex, j));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного поставщика<br>
+                    Распределяем ${bCopy[j]} единиц в клетку (${fictiveSupplierIndex+1},${j+1})<br>
+                    Остатки: b<sub>${j+1}</sub> = 0`);
+                
+                bCopy[j] = 0;
+                step++;
+            }
+        }
+    }
+
+    if (fictiveConsumerIndex !== -1) {
+        for (let i = 0; i < m; i++) {
+            if (i === fictiveSupplierIndex) continue;
+            if (aCopy[i] > 0) {
+                x[i][fictiveConsumerIndex] = aCopy[i];
+                indexesForBaza.push(new Cell(i, fictiveConsumerIndex));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного потребителя<br>
+                    Распределяем ${aCopy[i]} единиц в клетку (${i+1},${fictiveConsumerIndex+1})<br>
+                    Остатки: a<sub>${i+1}</sub> = 0`);
+                
+                aCopy[i] = 0;
+                step++;
+            }
+        }
+    }
+
+    // Шаг 3: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
     let expectedBazisCount = m + n - 1;
     if (indexesForBaza.length < expectedBazisCount) {
         console.log(`Текущее количество базисных клеток: ${indexesForBaza.length}, ожидается: ${expectedBazisCount}. Добавляем базисные нули.`);
@@ -438,7 +534,13 @@ function solveMinimumElement(a, b, costs) {
                         if (rowCount === 0 || colCount === 0) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Устанавливаем базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }
@@ -453,7 +555,13 @@ function solveMinimumElement(a, b, costs) {
                         if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }
@@ -474,7 +582,7 @@ function solveMinimumElement(a, b, costs) {
  * @param {number[]} b Значения для потребителей
  * @param {number[][]} costs Значения тарифов
  */
- function solveDoublePreference(a, b, costs) {
+function solveDoublePreference(a, b, costs) {
     // Описание сути метода двойного предпочтения
     let methodDescription = `
         <div style="margin-bottom: 20px;">
@@ -492,10 +600,11 @@ function solveMinimumElement(a, b, costs) {
         </div>
     `;
     document.getElementById('method_description').innerHTML = methodDescription;
+    document.getElementById('solved_matrix').replaceChildren();
 
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
-    let taskType = determineTaskType(a, b, costs, conditionElement);
+    let { taskType, fictiveSupplierIndex, fictiveConsumerIndex } = determineTaskType(a, b, costs, conditionElement);
 
     let m = a.length;
     let n = b.length;
@@ -515,14 +624,16 @@ function solveMinimumElement(a, b, costs) {
     let indexesForBaza = [];
     let rowAvailable = Array(m).fill(true);
     let colAvailable = Array(n).fill(true);
+    let step = 1;
 
-    // Шаг 1: Распределяем грузы методом двойного предпочтения
-    while (rowAvailable.some(val => val) && colAvailable.some(val => val)) {
+    // Шаг 1: Распределяем грузы методом двойного предпочтения, исключая фиктивные
+    while (rowAvailable.some((val, i) => val && i !== fictiveSupplierIndex) && 
+           colAvailable.some((val, j) => val && j !== fictiveConsumerIndex)) {
         // Находим строку с минимальным запасом
         let minSupply = Infinity;
         let minSupplyIndex = -1;
         for (let i = 0; i < m; i++) {
-            if (rowAvailable[i] && aCopy[i] > 0 && aCopy[i] < minSupply) {
+            if (rowAvailable[i] && i !== fictiveSupplierIndex && aCopy[i] > 0 && aCopy[i] < minSupply) {
                 minSupply = aCopy[i];
                 minSupplyIndex = i;
             }
@@ -532,7 +643,7 @@ function solveMinimumElement(a, b, costs) {
         let minDemand = Infinity;
         let minDemandIndex = -1;
         for (let j = 0; j < n; j++) {
-            if (colAvailable[j] && bCopy[j] > 0 && bCopy[j] < minDemand) {
+            if (colAvailable[j] && j !== fictiveConsumerIndex && bCopy[j] > 0 && bCopy[j] < minDemand) {
                 minDemand = bCopy[j];
                 minDemandIndex = j;
             }
@@ -547,7 +658,7 @@ function solveMinimumElement(a, b, costs) {
 
         // Проверяем клетки в строке с минимальным запасом
         for (let j = 0; j < n; j++) {
-            if (colAvailable[j] && bCopy[j] > 0 && costs[minSupplyIndex][j] < minCost) {
+            if (colAvailable[j] && j !== fictiveConsumerIndex && bCopy[j] > 0 && costs[minSupplyIndex][j] < minCost) {
                 minCost = costs[minSupplyIndex][j];
                 minI = minSupplyIndex;
                 minJ = j;
@@ -556,7 +667,7 @@ function solveMinimumElement(a, b, costs) {
 
         // Проверяем клетки в столбце с минимальной потребностью
         for (let i = 0; i < m; i++) {
-            if (rowAvailable[i] && aCopy[i] > 0 && costs[i][minDemandIndex] < minCost) {
+            if (rowAvailable[i] && i !== fictiveSupplierIndex && aCopy[i] > 0 && costs[i][minDemandIndex] < minCost) {
                 minCost = costs[i][minDemandIndex];
                 minI = i;
                 minJ = minDemandIndex;
@@ -569,15 +680,65 @@ function solveMinimumElement(a, b, costs) {
         let allocation = Math.min(aCopy[minI], bCopy[minJ]);
         x[minI][minJ] = allocation;
         indexesForBaza.push(new Cell(minI, minJ));
+
+        // Отображаем промежуточный шаг
+        let stepDescription = `Шаг ${step}: `;
+        stepDescription += `Находим строку с минимальным запасом: строка ${minSupplyIndex + 1} (запас = ${minSupply})<br>`;
+        stepDescription += `Находим столбец с минимальной потребностью: столбец ${minDemandIndex + 1} (потребность = ${minDemand})<br>`;
+        stepDescription += `В выбранных строке и столбце находим клетку с минимальным тарифом (${minI + 1},${minJ + 1}) = ${costs[minI][minJ]}<br>`;
+        stepDescription += `Распределяем ${allocation} единиц<br>`;
+        stepDescription += `Остатки: a<sub>${minI + 1}</sub> = ${aCopy[minI] - allocation}, b<sub>${minJ + 1}</sub> = ${bCopy[minJ] - allocation}`;
+
+        drawIntermediateStep(a, b, costs, x, indexesForBaza, stepDescription);
+
         aCopy[minI] -= allocation;
         bCopy[minJ] -= allocation;
 
         // Обновляем доступность строки и столбца
         if (aCopy[minI] === 0) rowAvailable[minI] = false;
         if (bCopy[minJ] === 0) colAvailable[minJ] = false;
+
+        step++;
     }
 
-    // Шаг 2: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
+    // Шаг 2: Распределяем оставшийся груз через фиктивного поставщика/потребителя
+    if (fictiveSupplierIndex !== -1) {
+        for (let j = 0; j < n; j++) {
+            if (j === fictiveConsumerIndex) continue;
+            if (bCopy[j] > 0) {
+                x[fictiveSupplierIndex][j] = bCopy[j];
+                indexesForBaza.push(new Cell(fictiveSupplierIndex, j));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного поставщика<br>
+                    Распределяем ${bCopy[j]} единиц в клетку (${fictiveSupplierIndex+1},${j+1})<br>
+                    Остатки: b<sub>${j+1}</sub> = 0`);
+                
+                bCopy[j] = 0;
+                step++;
+            }
+        }
+    }
+
+    if (fictiveConsumerIndex !== -1) {
+        for (let i = 0; i < m; i++) {
+            if (i === fictiveSupplierIndex) continue;
+            if (aCopy[i] > 0) {
+                x[i][fictiveConsumerIndex] = aCopy[i];
+                indexesForBaza.push(new Cell(i, fictiveConsumerIndex));
+                
+                drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                    `Шаг ${step}: Распределяем оставшийся груз через фиктивного потребителя<br>
+                    Распределяем ${aCopy[i]} единиц в клетку (${i+1},${fictiveConsumerIndex+1})<br>
+                    Остатки: a<sub>${i+1}</sub> = 0`);
+                
+                aCopy[i] = 0;
+                step++;
+            }
+        }
+    }
+
+    // Шаг 3: Проверяем количество базисных клеток и добавляем базисные нули, если нужно
     let expectedBazisCount = m + n - 1;
     if (indexesForBaza.length < expectedBazisCount) {
         console.log(`Текущее количество базисных клеток: ${indexesForBaza.length}, ожидается: ${expectedBazisCount}. Добавляем базисные нули.`);
@@ -595,7 +756,13 @@ function solveMinimumElement(a, b, costs) {
                         if (rowCount === 0 || colCount === 0) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Устанавливаем базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }
@@ -610,7 +777,13 @@ function solveMinimumElement(a, b, costs) {
                         if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
                             indexesForBaza.push(new Cell(i, j));
                             x[i][j] = 0; // Базисный ноль
+                            
+                            // Отображаем добавление базисного нуля
+                            drawIntermediateStep(a, b, costs, x, indexesForBaza, 
+                                `Шаг ${step}: Добавляем базисный ноль в клетку (${i+1},${j+1})`);
+                            
                             added = true;
+                            step++;
                             break;
                         }
                     }
@@ -628,7 +801,7 @@ function solveMinimumElement(a, b, costs) {
 /**
  * Вычисляет потенциалы u и v
  */
- function calculatePotentials(a, b, costs, indexesForBaza) {
+function calculatePotentials(a, b, costs, indexesForBaza) {
     let m = a.length;
     let n = b.length;
 
@@ -663,7 +836,7 @@ function solveMinimumElement(a, b, costs) {
 /**
  * Вычисляет оценки свободных клеток (дельты)
  */
- function calculateDeltas(a, b, c, x, indexesForBaza) {
+function calculateDeltas(a, b, c, x, indexesForBaza) {
     let m = a.length;
     let n = b.length;
     let deltas = [];
