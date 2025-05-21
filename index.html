@@ -10,64 +10,165 @@
     <link rel="icon" type="image/png" href="./img/js.png">
     <script src="./lib/vis.min.js"></script> <!-- Локальный путь -->
     <link href="./lib/vis-network.min.css" rel="stylesheet" type="text/css" /> <!-- Локальный путь -->
+    <script src="./lib/mammoth.browser.min.js"></script>
+    <script src="./lib/html-docx.js"></script>
     <script src="./script.js" defer></script>
     <script src="./draw.js" defer></script>
+    <style>
+        
+    </style>
 </head>
 
 <body>
-    <div class="content-container">
-        <h1>Решение Транспортной задачи</h1>
-        
-        Введите количество поставщиков (m):
-        <input type="number" id="count_a" placeholder="Введите число">
+    <nav class="nav-menu">
+        <ul>
+            <li><a href="#" onclick="showTab('main')">Главная</a></li>
+            <li><a href="#" onclick="showTab('about')">О программе</a></li>
+            <li><a href="#" onclick="showTab('guide')">Руководство пользователя</a></li>
+        </ul>
+    </nav>
 
-        <br><br>
+    <div id="main" class="tab-content active">
+        <div class="content-container">
+            <h1>Решение Транспортной задачи</h1>
+            
+            <div>
+                Введите количество поставщиков (m):
+                <input type="number" id="count_a" placeholder="Введите число">
+            </div>
 
-        Введите количество потребителей (n):
-        <input type="number" id="count_b" placeholder="Введите число">
-
-        <br><br>
-
-        <button id="btn_save_params">Сохранить</button>
-
-        <br><br><br>
-
-        <div id="a_values" class="table-container"></div>
-        <br>
-        <div id="b_values" class="table-container"></div>
-        <br>
-        <button id="btn_draw_c_system" style="display: none;">Задать тарифы</button>
-        <br><br>
-        
-        <div id="c_values"></div>
-        <br>        
-
-        <div class="method-choice" style="display: none;">
-            Выберите метод нахождения исходного опорного плана:
             <br>
-            <label><input type="radio" name="method" value="northwest" checked> Метод Северо-западного угла</label>
+
+            <div>
+                Введите количество потребителей (n):
+                <input type="number" id="count_b" placeholder="Введите число">
+            </div>
+
             <br>
-            <label><input type="radio" name="method" value="minimum"> Метод Минимального элемента</label>
+
+            <button id="btn_save_params">Сохранить введенные данные</button>
+            <input type="file" id="file_input" accept=".txt,.docx" style="display: none;">
+            <button id="btn_load_file">Загрузить данные из файла</button>
+
             <br>
-            <label><input type="radio" name="method" value="Fogel"> Метод Аппроксимации Фогеля</label>
-            <br>
-            <label><input type="radio" name="method" value="doublePref"> Метод Двойного предпочтения</label>
+
+            <!-- Шаблоны таблиц -->
+            <div id="suppliers-template" style="display: none;">
+                <div class="table-container">
+                    <p>Введите возможности поставщиков:</p>
+                    <table class="table-tariff">
+                        <tr id="suppliers-header"></tr>
+                        <tr id="suppliers-inputs"></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div id="consumers-template" style="display: none;">
+                <div class="table-container">
+                    <p>Введите потребности потребителей:</p>
+                    <table class="table-tariff">
+                        <tr id="consumers-header"></tr>
+                        <tr id="consumers-inputs"></tr>
+                    </table>
+                </div>
+            </div>
+
+            
+
+            <div id="a_values" class="table-container"></div>
+            
+            <div id="b_values" class="table-container"></div>
+            
+            <button id="btn_draw_c_system" style="display: none;">Задать тарифы</button>
+            <br><br>
+            
+            <div id="c_values"></div>
+            <br>        
+
+            <div class="method-choice" style="display: none;">
+                <div>Выберите метод нахождения исходного опорного плана:</div>
+                <br>
+                <label><input type="radio" name="method" value="northwest" checked> Метод Северо-западного угла</label>
+                <br>
+                <label><input type="radio" name="method" value="minimum"> Метод Минимального элемента</label>
+                <br>
+                <label><input type="radio" name="method" value="Fogel"> Метод Аппроксимации Фогеля</label>
+                <br>
+                <label><input type="radio" name="method" value="doublePref"> Метод Двойного предпочтения</label>
+            </div>
+
+            <br><br>
+            <button id="btn_solve" style="display: none;">Решить</button>
+            <button id="btn_clear_table" style="display: none;">Очистить</button>
+            <br><br>
+            <div id="sum_a"></div>
+            <div id="sum_b"></div>
+            <div id="condition"></div>
+            <h2 id="title_1" style="display: none;">Нахождение исходного опорного плана выбранным методом</h2>
+            <div id="method_description"></div>
+            <div id="solved_matrix"></div>
+            <div id="history_solution"></div>
         </div>
-
-        <br><br>
-        <button id="btn_solve" style="display: none;">Решить</button>
-        <button id="btn_clear_table" style="display: none;">Очистить</button>
-        <br><br>
-        <div id="sum_a"></div>
-        <div id="sum_b"></div>
-        <div id="condition"></div>
-        <h2 id="title_1" style="display: none;">Нахождение исходного опорного плана выбранным методом</h2>
-        <div id="method_description"></div>
-        <div id="solved_matrix"></div>
-        <div id="history_solution"></div>
-
     </div>
 
+    <div id="about" class="tab-content">
+        <div class="content-container">
+            <h1>О программе</h1>
+            <p>Данная программа предназначена для решения транспортной задачи различными методами:</p>
+            <ul>
+                <li>Метод северо-западного угла</li>
+                <li>Метод минимального элемента</li>
+                <li>Метод аппроксимации Фогеля</li>
+                <li>Метод двойного предпочтения</li>
+            </ul>
+            <p>Программа позволяет:</p>
+            <ul>
+                <li>Вводить данные вручную или загружать из файлов формата TXT и DOCX</li>
+                <li>Визуализировать процесс решения задачи</li>
+                <li>Отображать промежуточные шаги решения</li>
+                <li>Представлять оптимальный план в виде графа</li>
+            </ul>
+            <p>Программу написал Бондарев Артём для Выпускной квалификационной работы.</p>
+        </div>
+    </div>
+
+    <div id="guide" class="tab-content">
+        <div class="content-container">
+            <h1>Руководство пользователя</h1>
+            <h2>Начало работы</h2>
+            <ol>
+                <li>Введите количество поставщиков (m) и потребителей (n)</li>
+                <li>Нажмите кнопку "Сохранить"</li>
+                <li>Заполните таблицы с возможностями поставщиков и потребностями потребителей</li>
+                <li>Нажмите кнопку "Задать тарифы"</li>
+                <li>Заполните таблицу тарифов</li>
+            </ol>
+
+            <h2>Загрузка данных из файла</h2>
+            <p>Программа поддерживает загрузку данных из файлов формата TXT и DOCX. Файл должен содержать:</p>
+            <ol>
+                <li>Первая строка: два числа - количество поставщиков (m) и потребителей (n)</li>
+                <li>Вторая строка: m чисел - возможности поставщиков</li>
+                <li>Третья строка: n чисел - потребности потребителей</li>
+                <li>Следующие m строк: по n чисел в каждой - тарифы перевозок</li>
+            </ol>
+
+            <h2>Решение задачи</h2>
+            <ol>
+                <li>Выберите метод нахождения исходного опорного плана</li>
+                <li>Нажмите кнопку "Решить"</li>
+                <li>Проследите за пошаговым решением задачи</li>
+                <li>Изучите итоговый оптимальный план и его визуализацию</li>
+            </ol>
+
+            <h2>Очистка данных</h2>
+            <p>Для начала работы с новыми данными нажмите кнопку "Очистить"</p>
+        </div>
+    </div>
+
+    <script>
+        
+    </script>
 </body>
 
 </html>

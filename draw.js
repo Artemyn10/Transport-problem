@@ -1,6 +1,4 @@
-//=====================================================================================================================
                                         // ДОБАВЛЕНИЕ ОБРАБОТЧИКОВ ДЛЯ КНОПОК
-//=====================================================================================================================
 function addEventHandler() {
     const getValuesFor_A_B = () => {
         const m = parseInt(document.getElementById('count_a').value) || 0;
@@ -67,7 +65,7 @@ function addEventHandler() {
 
         let solution;
         if (method === 'northwest') {
-            solution = solve(res.a, res.b, c);
+            solution = solveNorthwest(res.a, res.b, c);
         } else if (method === 'minimum') {
             solution = solveMinimumElement(res.a, res.b, c);
         } else if (method === 'Fogel') {
@@ -90,16 +88,168 @@ function addEventHandler() {
         document.getElementById('sum_b').innerHTML = '';
         document.getElementById('method_description').innerHTML = '';
     });
+
+    document.getElementById('btn_load_file').addEventListener('click', () => {
+        document.getElementById('file_input').click();
+    });
+
+    document.getElementById('file_input').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            handleFileUpload(file);
+        }
+    });
 }
 
 addEventHandler();
 
-//=====================================================================================================================
-                                        // ОТРИСОВКА ВСЯКОГО
-//=====================================================================================================================
+function showTab(tabId) {
+    // Скрываем все вкладки
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Показываем выбранную вкладку
+    document.getElementById(tabId).classList.add('active');
+}
+/**
+ * Обработка загруженного файла с данными транспортной задачи
+ * @param {File} file Загруженный файл
+ */
+function handleFileUpload(file) {
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    const processText = (text) => {
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        
+        if (lines.length < 4) throw new Error('Файл должен содержать как минимум 4 строки');
+        
+        const [m, n] = lines[0].split(/\s+/).map(Number);
+        if (isNaN(m) || isNaN(n) || m <= 0 || n <= 0) throw new Error('Некорректные значения для количества поставщиков или потребителей');
+        
+        const supplies = lines[1].split(/\s+/).map(Number);
+        if (supplies.length !== m || supplies.some(s => isNaN(s) || s < 0)) throw new Error('Некорректные значения запасов поставщиков');
+        
+        const demands = lines[2].split(/\s+/).map(Number);
+        if (demands.length !== n || demands.some(d => isNaN(d) || d < 0)) throw new Error('Некорректные значения потребностей потребителей');
+        
+        const costs = [];
+        for (let i = 3; i < 3 + m; i++) {
+            const row = lines[i].split(/\s+/).map(Number);
+            if (row.length !== n || row.some(c => isNaN(c) || c < 0)) throw new Error(`Некорректные значения тарифов в строке ${i}`);
+            costs.push(row);
+        }
+
+        // Применяем данные к интерфейсу
+        document.getElementById('count_a').value = m;
+        document.getElementById('count_b').value = n;
+        drawSystem(m, n);
+
+        for (let i = 0; i < m; i++) {
+            const input = document.getElementById(`A${i + 1}`);
+            if (input) input.value = supplies[i];
+        }
+
+        for (let i = 0; i < n; i++) {
+            const input = document.getElementById(`B${i + 1}`);
+            if (input) input.value = demands[i];
+        }
+
+        document.getElementById('btn_draw_c_system').click();
+        draw_C_System(supplies, demands);
+
+        for (let i = 0; i < m; i++) {
+            for (let j = 0; j < n; j++) {
+                const input = document.getElementById(`c${i}${j}`);
+                if (input) input.value = costs[i][j];
+            }
+        }
+    };
+
+    if (fileExtension === 'docx') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            mammoth.extractRawText({ arrayBuffer: e.target.result })
+                .then(result => {
+                    try { processText(result.value); }
+                    catch (error) { alert('Ошибка при чтении файла: ' + error.message); }
+                })
+                .catch(error => alert('Ошибка при чтении файла: ' + error.message));
+        };
+        reader.onerror = function() {
+            alert('Ошибка при чтении файла');
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'txt') {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try { processText(e.target.result); }
+            catch (error) { alert('Ошибка при чтении файла: ' + error.message); }
+        };
+        reader.readAsText(file);
+    } else {
+        alert('Неподдерживаемый формат файла. Используйте .txt или .docx файлы.');
+    }
+}
 
 /**
- * Отрисовка HTML таблицы для заполнения цен
+ * Отрисовка HTML для заполнения системы (a, b)
+ * @param {number} m кол-во поставщиков
+ * @param {number} n кол-во потребителей
+ */
+function drawSystem(m, n) {
+    // Клонируем шаблоны
+    const suppliersTemplate = document.getElementById('suppliers-template').cloneNode(true);
+    const consumersTemplate = document.getElementById('consumers-template').cloneNode(true);
+
+    // Показываем шаблоны
+    suppliersTemplate.style.display = 'block';
+    consumersTemplate.style.display = 'block';
+
+    // Заполняем заголовки и поля ввода для поставщиков
+    const suppliersHeader = suppliersTemplate.querySelector('#suppliers-header');
+    const suppliersInputs = suppliersTemplate.querySelector('#suppliers-inputs');
+    
+    for (let i = 1; i <= m; i++) {
+        const th = document.createElement('th');
+        th.innerHTML = `A<sub>${i}</sub>`;
+        suppliersHeader.appendChild(th);
+
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `A${i}`;
+        input.placeholder = `a${i}`;
+        td.appendChild(input);
+        suppliersInputs.appendChild(td);
+    }
+
+    // Заполняем заголовки и поля ввода для потребителей
+    const consumersHeader = consumersTemplate.querySelector('#consumers-header');
+    const consumersInputs = consumersTemplate.querySelector('#consumers-inputs');
+    
+    for (let i = 1; i <= n; i++) {
+        const th = document.createElement('th');
+        th.innerHTML = `B<sub>${i}</sub>`;
+        consumersHeader.appendChild(th);
+
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `B${i}`;
+        input.placeholder = `b${i}`;
+        td.appendChild(input);
+        consumersInputs.appendChild(td);
+    }
+
+    // Добавляем таблицы на страницу
+    document.getElementById('a_values').replaceChildren(suppliersTemplate);
+    document.getElementById('b_values').replaceChildren(consumersTemplate);
+    
+    // Показываем кнопку для ввода тарифов
+    document.getElementById('btn_draw_c_system').style.display = 'inline-block';
+}
+
+/**
+ * Отрисовка HTML таблицы для заполнения тарифов
  * @param {number[]} a значения для поставщиков
  * @param {number[]} b значения для потребителей
  */
@@ -405,6 +555,24 @@ function drawTableInitialPlan(a, b, c, x, indexesForBaza) {
     if (!hasPositiveDelta) {
         let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, 0);
         div.appendChild(graphElement);
+
+        // Добавляем кнопки для сохранения отчета
+        let saveButtonsDiv = document.createElement('div');
+        saveButtonsDiv.style.marginTop = '20px';
+        saveButtonsDiv.style.textAlign = 'center';
+
+        let saveTxtBtn = document.createElement('button');
+        saveTxtBtn.textContent = 'Сохранить отчет в TXT';
+        saveTxtBtn.style.marginRight = '10px';
+        saveTxtBtn.onclick = () => saveReport('txt', a, b, c, x, indexesForBaza, totalCost);
+
+        let saveDocxBtn = document.createElement('button');
+        saveDocxBtn.textContent = 'Сохранить отчет в DOCX';
+        saveDocxBtn.onclick = () => saveReport('docx', a, b, c, x, indexesForBaza, totalCost);
+
+        saveButtonsDiv.appendChild(saveTxtBtn);
+        saveButtonsDiv.appendChild(saveDocxBtn);
+        div.appendChild(saveButtonsDiv);
     }
 
     document.getElementById('solved_matrix').appendChild(div);
@@ -804,36 +972,100 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
 }
 
 /**
- * Отрисовка HTML для заполнения системы (a, b)
- * @param {number} m кол-во поставщиков
- * @param {number} n кол-во потребителей
+ * Генерирует и сохраняет отчет о решении транспортной задачи
+ * @param {string} format Формат файла ('txt' или 'docx')
+ * @param {number[]} a Возможности поставщиков
+ * @param {number[]} b Потребности потребителей
+ * @param {number[][]} c Матрица тарифов
+ * @param {number[][]} x Оптимальный план
+ * @param {Cell[]} indexesForBaza Базисные клетки
+ * @param {number} totalCost Общая стоимость перевозок
  */
-function drawSystem(m, n) {
-    // Создаём таблицу для поставщиков
-    let htmlA = 'Введите возможности поставщиков: <br>';
-    htmlA += '<table class="table-tariff"><tr>';
-    for (let i = 1; i <= m; i++) {
-        htmlA += `<th>A<sub>${i}</sub></th>`;
-    }
-    htmlA += '</tr><tr>';
-    for (let i = 1; i <= m; i++) {
-        htmlA += `<td><input type="number" id="A${i}" placeholder="a${i}"></td>`;
-    }
-    htmlA += '</tr></table></div>';
+function saveReport(format, a, b, c, x, indexesForBaza, totalCost) {
+    const method = document.querySelector('input[name="method"]:checked')?.value || 'northwest';
+    const methodNames = {
+        'northwest': 'Метод северо-западного угла',
+        'minimum': 'Метод минимального элемента',
+        'Fogel': 'Метод аппроксимации Фогеля',
+        'doublePref': 'Метод двойного предпочтения'
+    };
 
-    // Создаём таблицу для потребителей
-    let htmlB = 'Введите потребности потребителей: <br>';
-    htmlB += '<table class="table-tariff"><tr>';
-    for (let i = 1; i <= n; i++) {
-        htmlB += `<th>B<sub>${i}</sub></th>`;
-    }
-    htmlB += '</tr><tr>';
-    for (let i = 1; i <= n; i++) {
-        htmlB += `<td><input type="number" id="B${i}" placeholder="b${i}"></td>`;
-    }
-    htmlB += '</tr></table></div>';
+    // Формируем отчет в виде строки
+    let reportTxt = `Отчет о решении транспортной задачи\n`;
+    reportTxt += `================================\n\n`;
+    reportTxt += `Дата: ${new Date().toLocaleString()}\n\n`;
+    reportTxt += `Исходные данные:\n`;
+    reportTxt += `Количество поставщиков: ${a.length}\n`;
+    reportTxt += `Количество потребителей: ${b.length}\n\n`;
+    reportTxt += `Возможности поставщиков:\n`;
+    a.forEach((val, i) => reportTxt += `A${i+1}: ${val}\n`);
+    reportTxt += `\nПотребности потребителей:\n`;
+    b.forEach((val, i) => reportTxt += `B${i+1}: ${val}\n`);
+    reportTxt += `\nМатрица тарифов:\n`;
+    c.forEach(row => {
+        reportTxt += row.map(val => val.toString().padStart(4)).join(' ') + '\n';
+    });
+    reportTxt += `\nМетод нахождения исходного опорного плана: ${methodNames[method]}\n\n`;
+    reportTxt += `Оптимальный план перевозок найден методом потенциалов::\n`;
+    x.forEach(row => {
+        reportTxt += row.map(val => val.toString().padStart(4)).join(' ') + '\n';
+    });
+    reportTxt += `\nРаспределяя так продукцию, транспортные расходы будут минимальны и составят: ${totalCost} у.д.е.\n\n`;
+    reportTxt += `Базисные клетки:\n`;
+    indexesForBaza.forEach(cell => {
+        reportTxt += `(${cell.row+1},${cell.col+1}): ${x[cell.row][cell.col]}\n`;
+    });
 
-    document.getElementById('a_values').innerHTML = htmlA;
-    document.getElementById('b_values').innerHTML = htmlB;
-    document.getElementById('btn_draw_c_system').style.display = 'inline-block';
+    // Формируем HTML для docx-отчета
+    let reportHtml = `
+        <h2 style="text-align:center;">Отчет о решении транспортной задачи</h2>
+        <p><b>Дата:</b> ${new Date().toLocaleString()}</p>
+        <h3>Исходные данные:</h3>
+        <p>Количество поставщиков: ${a.length}<br>
+        Количество потребителей: ${b.length}</p>
+        <p><b>Возможности поставщиков:</b><br>
+        ${a.map((val, i) => `A${i+1}: ${val}`).join('<br>')}</p>
+        <p><b>Потребности потребителей:</b><br>
+        ${b.map((val, i) => `B${i+1}: ${val}`).join('<br>')}</p>
+        <p><b>Матрица тарифов:</b></p>
+        <table border="1" cellspacing="0" cellpadding="4">
+            <tbody>
+            ${c.map(row => `<tr>${row.map(val => `<td>${val}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+        </table>
+        <p><b>Метод нахождения исходного опорного плана:</b> ${methodNames[method]}</p>
+        <p><b>Оптимальный план перевозок найден методом потенциалов:</b></p>
+        <table border="1" cellspacing="0" cellpadding="4">
+            <tbody>
+            ${x.map(row => `<tr>${row.map(val => `<td>${val}</td>`).join('')}</tr>`).join('')}
+            </tbody>
+        </table>
+        <p><b>Распределяя так продукцию, транспортные расходы будут минимальны и составят:</b> ${totalCost} у.д.е.</p>
+        <p><b>Базисные клетки:</b><br>
+        ${indexesForBaza.map(cell => `(${cell.row+1},${cell.col+1}): ${x[cell.row][cell.col]}`).join('<br>')}
+        </p>
+    `;
+
+    // Сохраняем нужный формат
+    if (format === 'txt') {
+        const blob = new Blob([reportTxt], { type: 'text/plain;charset=utf-8' });
+        const aElem = document.createElement('a');
+        aElem.href = URL.createObjectURL(blob);
+        aElem.download = `transport_task_report_${new Date().toISOString().slice(0,10)}.txt`;
+        document.body.appendChild(aElem);
+        aElem.click();
+        document.body.removeChild(aElem);
+        URL.revokeObjectURL(aElem.href);
+    } else if (format === 'docx') {
+        // Используем html-docx-js
+        const blob = window.htmlDocx.asBlob(reportHtml, {orientation: "portrait"});
+        const aElem = document.createElement('a');
+        aElem.href = URL.createObjectURL(blob);
+        aElem.download = `transport_task_report_${new Date().toISOString().slice(0,10)}.docx`;
+        document.body.appendChild(aElem);
+        aElem.click();
+        document.body.removeChild(aElem);
+        URL.revokeObjectURL(aElem.href);
+    }
 }
+

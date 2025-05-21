@@ -4,7 +4,7 @@
  * @param {number[]} b значения для потребителей
  * @param {number[][]} costs значения цен
  */
-function solve(a, b, costs) {
+function solveNorthwest(a, b, costs) {
     // Описание сути метода северо-западного угла
     let methodDescription = `
         <div style="margin-bottom: 20px;">
@@ -1052,23 +1052,23 @@ function buildPath(startCell, bazises) {
     return path;
 }
 
+/**
+* @param {Cell} cell текущая ячейка
+* @param {string} prevDir предыдущее направление
+* @param {Cell[]} nextCells возможные следующие ходы
+*/
 class MyState {
-    /**
-     * @param {Cell} cell текущая ячейка
-     * @param {string} prevDir предыдущее направление
-     * @param {Cell[]} nextCells возможные следующие ходы
-     */
     constructor(cell, prevDir, nextCells) {
         this.cell = cell;
         this.prevDir = prevDir;
         this.nextCells = nextCells;
     }
 }
+ /**
+* @param {number} r строка
+* @param {number} c столбец
+*/
 class Cell {
-    /**
-     * @param {number} r строка
-     * @param {number} c столбец
-     */
     constructor(r, c) {
         this.row = r;
         this.col = c;
