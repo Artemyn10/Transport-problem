@@ -320,7 +320,7 @@ hr {
 }
 
 /* Стили для кнопок сохранения отчета */
-#solved_matrix button {
+#solved_matrix button, #history_solution button {
     background-color: #0066ff;
     color: white;
     border: none;
@@ -331,11 +331,11 @@ hr {
     transition: background-color 0.3s ease;
 }
 
-#solved_matrix button:hover {
+#solved_matrix button:hover, #history_solution button:hover {
     transform: translateY(-2px);
     background-color: #0052cc;
 }
 
-#solved_matrix button:active {
+#solved_matrix button:active, #history_solution button:active {
     background-color: #003d99;
 }

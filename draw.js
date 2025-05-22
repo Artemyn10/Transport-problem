@@ -830,6 +830,23 @@ function drawHistorySolutionPotential(a, b, c, x, indexesForBaza, u, v, path, ba
         if (!hasPositiveDelta) {
             let graphElement = drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration);
             div.appendChild(graphElement);
+            // Добавляем кнопки для сохранения отчета
+            let saveButtonsDiv = document.createElement('div');
+            saveButtonsDiv.style.marginTop = '20px';
+            saveButtonsDiv.style.textAlign = 'center';
+
+            let saveTxtBtn = document.createElement('button');
+            saveTxtBtn.textContent = 'Сохранить отчет в TXT';
+            saveTxtBtn.style.marginRight = '10px';
+            saveTxtBtn.onclick = () => saveReport('txt', a, b, c, x, indexesForBaza, totalCost);
+
+            let saveDocxBtn = document.createElement('button');
+            saveDocxBtn.textContent = 'Сохранить отчет в DOCX';
+            saveDocxBtn.onclick = () => saveReport('docx', a, b, c, x, indexesForBaza, totalCost);
+
+            saveButtonsDiv.appendChild(saveTxtBtn);
+            saveButtonsDiv.appendChild(saveDocxBtn);
+            div.appendChild(saveButtonsDiv);
         }
     }
 
