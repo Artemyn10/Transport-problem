@@ -138,7 +138,40 @@ function handleFileUpload(file) {
             costs.push(row);
         }
 
-        // Применяем данные к интерфейсу
+        applyDataToInterface(m, n, supplies, demands, costs);
+    };
+
+    const processExcel = (data) => {
+        try {
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+            if (jsonData.length < 4) throw new Error('Файл должен содержать как минимум 4 строки');
+
+            const [m, n] = jsonData[0].map(Number);
+            if (isNaN(m) || isNaN(n) || m <= 0 || n <= 0) throw new Error('Некорректные значения для количества поставщиков или потребителей');
+
+            const supplies = jsonData[1].map(Number);
+            if (supplies.length !== m || supplies.some(s => isNaN(s) || s < 0)) throw new Error('Некорректные значения запасов поставщиков');
+
+            const demands = jsonData[2].map(Number);
+            if (demands.length !== n || demands.some(d => isNaN(d) || d < 0)) throw new Error('Некорректные значения потребностей потребителей');
+
+            const costs = [];
+            for (let i = 3; i < 3 + m; i++) {
+                const row = jsonData[i].map(Number);
+                if (row.length !== n || row.some(c => isNaN(c) || c < 0)) throw new Error(`Некорректные значения тарифов в строке ${i}`);
+                costs.push(row);
+            }
+
+            applyDataToInterface(m, n, supplies, demands, costs);
+        } catch (error) {
+            alert('Ошибка при чтении Excel файла: ' + error.message);
+        }
+    };
+
+    const applyDataToInterface = (m, n, supplies, demands, costs) => {
         document.getElementById('count_a').value = m;
         document.getElementById('count_b').value = n;
         drawSystem(m, n);
@@ -185,8 +218,18 @@ function handleFileUpload(file) {
             catch (error) { alert('Ошибка при чтении файла: ' + error.message); }
         };
         reader.readAsText(file);
+    } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try { processExcel(e.target.result); }
+            catch (error) { alert('Ошибка при чтении файла: ' + error.message); }
+        };
+        reader.onerror = function() {
+            alert('Ошибка при чтении файла');
+        };
+        reader.readAsArrayBuffer(file);
     } else {
-        alert('Неподдерживаемый формат файла. Используйте .txt или .docx файлы.');
+        alert('Неподдерживаемый формат файла. Используйте .txt, .docx или .xlsx файлы.');
     }
 }
 
@@ -568,10 +611,16 @@ function drawTableInitialPlan(a, b, c, x, indexesForBaza) {
 
         let saveDocxBtn = document.createElement('button');
         saveDocxBtn.textContent = 'Сохранить отчет в DOCX';
+        saveDocxBtn.style.marginRight = '10px';
         saveDocxBtn.onclick = () => saveReport('docx', a, b, c, x, indexesForBaza, totalCost);
+
+        let saveXlsxBtn = document.createElement('button');
+        saveXlsxBtn.textContent = 'Сохранить отчет в Excel';
+        saveXlsxBtn.onclick = () => saveReport('xlsx', a, b, c, x, indexesForBaza, totalCost);
 
         saveButtonsDiv.appendChild(saveTxtBtn);
         saveButtonsDiv.appendChild(saveDocxBtn);
+        saveButtonsDiv.appendChild(saveXlsxBtn);
         div.appendChild(saveButtonsDiv);
     }
 
@@ -842,10 +891,16 @@ function drawHistorySolutionPotential(a, b, c, x, indexesForBaza, u, v, path, ba
 
             let saveDocxBtn = document.createElement('button');
             saveDocxBtn.textContent = 'Сохранить отчет в DOCX';
+            saveDocxBtn.style.marginRight = '10px';
             saveDocxBtn.onclick = () => saveReport('docx', a, b, c, x, indexesForBaza, totalCost);
+
+            let saveXlsxBtn = document.createElement('button');
+            saveXlsxBtn.textContent = 'Сохранить отчет в Excel';
+            saveXlsxBtn.onclick = () => saveReport('xlsx', a, b, c, x, indexesForBaza, totalCost);
 
             saveButtonsDiv.appendChild(saveTxtBtn);
             saveButtonsDiv.appendChild(saveDocxBtn);
+            saveButtonsDiv.appendChild(saveXlsxBtn);
             div.appendChild(saveButtonsDiv);
         }
     }
@@ -1083,6 +1138,49 @@ function saveReport(format, a, b, c, x, indexesForBaza, totalCost) {
         aElem.click();
         document.body.removeChild(aElem);
         URL.revokeObjectURL(aElem.href);
+    } else if (format === 'xlsx') {
+        // Создаем новую книгу Excel
+        const wb = XLSX.utils.book_new();
+        
+        // Создаем лист с исходными данными
+        const initialData = [
+            ['Отчет о решении транспортной задачи'],
+            ['Дата:', new Date().toLocaleString()],
+            [],
+            ['Исходные данные:'],
+            ['Количество поставщиков:', a.length],
+            ['Количество потребителей:', b.length],
+            [],
+            ['Возможности поставщиков:'],
+            ...a.map((val, i) => [`A${i+1}:`, val]),
+            [],
+            ['Потребности потребителей:'],
+            ...b.map((val, i) => [`B${i+1}:`, val]),
+            [],
+            ['Матрица тарифов:'],
+            ...c.map(row => row)
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(initialData);
+        XLSX.utils.book_append_sheet(wb, ws1, "Исходные данные");
+
+        // Создаем лист с оптимальным планом
+        const optimalPlan = [
+            ['Оптимальный план перевозок'],
+            ['Метод нахождения исходного опорного плана:', methodNames[method]],
+            [],
+            ['Оптимальный план перевозок найден методом потенциалов:'],
+            ...x.map(row => row),
+            [],
+            ['Общая стоимость перевозок:', totalCost],
+            [],
+            ['Базисные клетки:'],
+            ...indexesForBaza.map(cell => [`(${cell.row+1},${cell.col+1})`, x[cell.row][cell.col]])
+        ];
+        const ws2 = XLSX.utils.aoa_to_sheet(optimalPlan);
+        XLSX.utils.book_append_sheet(wb, ws2, "Оптимальный план");
+
+        // Сохраняем файл
+        XLSX.writeFile(wb, `transport_task_report_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 }
 
