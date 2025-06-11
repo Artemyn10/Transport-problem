@@ -25,7 +25,7 @@ function solveNorthwest(a, b, costs) {
     
     // Определяем тип задачи и модифицируем a, b, costs при необходимости
     let conditionElement = document.getElementById('condition');
-    let { taskType, fictiveSupplierIndex, fictiveConsumerIndex } = determineTaskType(a, b, costs, conditionElement);
+    determineTaskType(a, b, costs, conditionElement);
 
     let x = [];
     for (let i = 0; i < a.length; i++) {

@@ -375,7 +375,6 @@ function draw_C_System(a, b) {
  * @param {number[]} b Значения для потребителей (модифицируется)
  * @param {number[][]} costs Значения тарифов (модифицируется)
  * @param {HTMLElement} conditionElement Элемент для вывода условия разрешимости
- * @returns {Object} Объект с типом задачи и индексами фиктивных поставщика/потребителя
  */
 function determineTaskType(a, b, costs, conditionElement) {
     // Вычисление суммы запасов и потребностей
@@ -388,7 +387,6 @@ function determineTaskType(a, b, costs, conditionElement) {
 
     let fictiveSupplierIndex = -1;
     let fictiveConsumerIndex = -1;
-    let taskType;
 
     // Проверка условия разрешимости
     if (aSum > bSum) {
@@ -398,8 +396,6 @@ function determineTaskType(a, b, costs, conditionElement) {
         for (let i = 0; i < a.length; i++) {
             costs[i].push(0);
         }
-        taskType = "открытая";
-        fictiveConsumerIndex = b.length - 1;
     } else if (aSum < bSum) {
         a.push(bSum - aSum);
         conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
@@ -409,15 +405,10 @@ function determineTaskType(a, b, costs, conditionElement) {
             newRow.push(0);
         }
         costs.push(newRow);
-        taskType = "открытая";
-        fictiveSupplierIndex = a.length - 1;
     } else {
         conditionElement.innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
         <br>Тип задачи: закрытая транспортная задача.`;
-        taskType = "закрытая";
     }
-
-    return { fictiveSupplierIndex, fictiveConsumerIndex };
 }
 /**
  * Отрисовка промежуточного шага построения опорного плана
