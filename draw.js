@@ -375,6 +375,7 @@ function draw_C_System(a, b) {
  * @param {number[]} b Значения для потребителей (модифицируется)
  * @param {number[][]} costs Значения тарифов (модифицируется)
  * @param {HTMLElement} conditionElement Элемент для вывода условия разрешимости
+ * @returns {Object} Объект с типом задачи и индексами фиктивных поставщика/потребителя
  */
 function determineTaskType(a, b, costs, conditionElement) {
     // Вычисление суммы запасов и потребностей
@@ -396,6 +397,7 @@ function determineTaskType(a, b, costs, conditionElement) {
         for (let i = 0; i < a.length; i++) {
             costs[i].push(0);
         }
+        fictiveConsumerIndex = b.length - 1;
     } else if (aSum < bSum) {
         a.push(bSum - aSum);
         conditionElement.innerHTML = `Условие разрешимости не выполняется: Возможностей у потребителей больше, чем запасов у поставщиков. 
@@ -405,10 +407,13 @@ function determineTaskType(a, b, costs, conditionElement) {
             newRow.push(0);
         }
         costs.push(newRow);
+        fictiveSupplierIndex = a.length - 1;
     } else {
         conditionElement.innerHTML = `Условие разрешимости выполняется: Возможностей у поставщиков столько же, сколько и потребностей у потребителей. 
         <br>Тип задачи: закрытая транспортная задача.`;
     }
+
+    return { fictiveSupplierIndex, fictiveConsumerIndex };
 }
 /**
  * Отрисовка промежуточного шага построения опорного плана
@@ -834,7 +839,7 @@ function drawHistorySolutionPotential(a, b, c, x, indexesForBaza, u, v, path, ba
     deltaMessage.innerHTML = `
     Проверим план X<sub>${iteration}</sub> на оптимальность. <br>
     Для этого найдем значения потенциалов и оценки свободных клеток.<br>
-    ${formatPotentials(calculatePotentials(a, b, c, indexesForBaza)[0], calculatePotentials(a, b, c, indexesForBaza)[1], a, b, c, indexesForBaza)}
+    ${formatPotentials(u, v, a, b, c, indexesForBaza)}
     ${formatDeltas(deltas, u, v, c)}`;
     
     let hasPositiveDelta = deltas.some(d => d.delta > 0);
