@@ -912,9 +912,6 @@ function potentialMethod(a, b, x, costs, indexesForBaza) {
 
         // Проверка количества базисных ячеек
         let expectedBazisCount = m + n - 1;
-        if (indexesForBaza.length < expectedBazisCount) {
-            console.warn(`Недостаточно базисных ячеек: ${indexesForBaza.length}, ожидается ${expectedBazisCount}`);
-        }
         // Построение цикла
         let path = buildPath(bazaCell, indexesForBaza);
 
@@ -929,7 +926,7 @@ function potentialMethod(a, b, x, costs, indexesForBaza) {
         let cellsContainsMinValue = cellsWithMinus.filter((cell) => x[cell.row][cell.col] == min_x_value);
         let costsForCellWithMinValue = cellsContainsMinValue.map((cell) => costs[cell.row][cell.col]);
         let minCost = Math.min(...costsForCellWithMinValue);
-        let cellWithMinValueAndMinCost = cellsContainsMinValue.filter((cell) => costs[cell.row][cell.col] == minCost)[0];
+        //let cellWithMinValueAndMinCost = cellsContainsMinValue.filter((cell) => costs[cell.row][cell.col] == minCost)[0];
 
         // Отрисовка промежуточного решения
         drawHistorySolutionPotential(a, b, costs, x, indexesForBaza, u, v, path, bazaCell, min_x_value, true, iteration);
@@ -952,13 +949,48 @@ function potentialMethod(a, b, x, costs, indexesForBaza) {
                 indexesForBaza.splice(index, 1);
             }
         } else {
+            // Находим ячейку с минимальным значением и минимальной стоимостью
+            let cellToRemove = cellsContainsMinValue[0];
+            let minCost = costs[cellToRemove.row][cellToRemove.col];
+            
             for (let cell of cellsContainsMinValue) {
-                if (cell.row == cellWithMinValueAndMinCost.row && cell.col == cellWithMinValueAndMinCost.col) {
-                    continue;
+                if (costs[cell.row][cell.col] < minCost) {
+                    minCost = costs[cell.row][cell.col];
+                    cellToRemove = cell;
                 }
-                let index = indexesForBaza.findIndex(c => c.row === cell.row && c.col === cell.col);
-                if (index !== -1) {
-                    indexesForBaza.splice(index, 1);
+            }
+            
+            // Удаляем только одну ячейку с минимальной стоимостью
+            let index = indexesForBaza.findIndex(c => c.row === cellToRemove.row && c.col === cellToRemove.col);
+            if (index !== -1) {
+                indexesForBaza.splice(index, 1);
+            }
+        }
+
+        // Проверка количества базисных ячеек перед финальной отрисовкой
+        if (indexesForBaza.length < expectedBazisCount) {
+            console.warn(`Недостаточно базисных ячеек: ${indexesForBaza.length}, ожидается ${expectedBazisCount}`);
+            
+            // Добавляем недостающие базисные ячейки
+            while (indexesForBaza.length < expectedBazisCount) {
+                // Ищем свободную ячейку
+                for (let i = 0; i < m; i++) {
+                    let added = false;
+                    for (let j = 0; j < n; j++) {
+                        // Проверяем, что ячейка еще не в базисе
+                        if (!indexesForBaza.some(cell => cell.row === i && cell.col === j)) {
+                            // Проверяем, что добавление не создаст цикл
+                            let rowCount = indexesForBaza.filter(cell => cell.row === i).length;
+                            let colCount = indexesForBaza.filter(cell => cell.col === j).length;
+                            if (rowCount === 0 || colCount === 0) {
+                                indexesForBaza.push(new Cell(i, j));
+                                x[i][j] = 0; // Устанавливаем базисный ноль
+                                added = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (added) break;
                 }
             }
         }

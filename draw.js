@@ -1011,7 +1011,7 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
             shape: 'circle',
             size: 30,
             font: { 
-                size: 12, 
+                size: 14, 
                 align: 'center'
             },
             color: {
@@ -1020,7 +1020,7 @@ function drawTransportGraph(x, c, indexesForBaza, m, n, a, b, iteration) {
             }
         },
         edges: {
-            font: { size: 12, align: 'middle' },
+            font: { size: 14, align: 'middle' },
             smooth: { type: 'straight' }
         },
         physics: false,
