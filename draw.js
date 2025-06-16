@@ -54,7 +54,7 @@ function addEventHandler() {
         for (let i = 0; i < res.a.length; i++) {
             let row = [];
             for (let j = 0; j < res.b.length; j++) {
-                const value = parseFloat(document.getElementById(`c${i}${j}`).value) || 0;
+                const value = parseFloat(document.getElementById(`c_${i}_${j}`).value) || 0;
                 row.push(value);
             }
             c.push(row);
@@ -187,7 +187,17 @@ function handleFileUpload(file) {
         }
 
         document.getElementById('btn_draw_c_system').click();
-        draw_C_System(supplies, demands);
+
+        setTimeout(() => {
+            for (let i = 0; i < m; i++) {
+                for (let j = 0; j < n; j++) {
+                    const input = document.getElementById(`c_${i}_${j}`);
+                    if (input) input.value = costs[i][j];
+                }
+            }
+        }, 0);
+
+    };
 
     if (fileExtension === 'docx') {
         const reader = new FileReader();
@@ -347,7 +357,7 @@ function draw_C_System(a, b) {
             input.style.border = '1px solid #ddd';
             input.style.borderRadius = '4px';
             input.style.textAlign = 'center';
-            input.id = `c${i}${j}`;           
+            input.id = `c_${i}_${j}`;           
             td.appendChild(input);
             tr.appendChild(td);
         }
