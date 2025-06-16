@@ -189,14 +189,6 @@ function handleFileUpload(file) {
         document.getElementById('btn_draw_c_system').click();
         draw_C_System(supplies, demands);
 
-        for (let i = 0; i < m; i++) {
-            for (let j = 0; j < n; j++) {
-                const input = document.getElementById(`c${i}${j}`);
-                if (input) input.value = costs[i][j];
-            }
-        }
-    };
-
     if (fileExtension === 'docx') {
         const reader = new FileReader();
         reader.onload = function(e) {
